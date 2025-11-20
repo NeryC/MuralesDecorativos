@@ -53,6 +53,9 @@
   </style>
 </head>
 <body>
+  <div style="text-align: right; margin-bottom: 10px;">
+    <a href="mapa.html" style="text-decoration: none; color: #007bff; font-weight: bold;">🗺️ Ver Mapa de Murales</a>
+  </div>
   <h2>Enviar nueva ubicación</h2>
   <form id="locationForm">
     <label>Nombre del lugar</label>
@@ -122,7 +125,7 @@
     let captchaB = Math.floor(Math.random() * 9) + 1;
     captchaText.textContent = `¿Cuánto es ${captchaA} + ${captchaB}?`;
 
-    const serverUrl = "https://script.google.com/macros/s/AKfycbyQ2mBYqyl1LoXSgrnQcPHKtLUTvTNBxwTGnNtdeFmP_CQQenhfJ7eAQXLDZSxlohtpXg/exec";
+    const serverUrl = "https://script.google.com/macros/s/AKfycbyHzo8l06zNI2MbQHNJwVqSSBK_vIYO0OLrp-VbyJdVxplpYDtZ5E47wVthLeuaW3K6Kw/exec";
 
     function validarURL(url) {
       return url.includes("google.com/maps") || url.includes("maps.app.goo.gl");

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa de Murales</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    header a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-left: 20px;
+      background: rgba(255,255,255,0.2);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #map {
+      flex-grow: 1;
+      width: 100%;
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1001;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mapa de Murales Decorativos</h1>
+    <a href="index.html">➕ Agregar Nuevo</a>
+  </header>
+
+  <div id="loading" class="loading">Cargando puntos...</div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Coordenadas por defecto (Asunción, Paraguay)
+    const map = L.map('map').setView([-25.2637, -57.5759], 13);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    const serverUrl = "https://script.google.com/macros/s/AKfycbyHzo8l06zNI2MbQHNJwVqSSBK_vIYO0OLrp-VbyJdVxplpYDtZ5E47wVthLeuaW3K6Kw/exec";
+
+    function extractCoords(url) {
+      // Intenta extraer lat,lng de URLs como https://www.google.com/maps?q=-25.282,-57.635
+      try {
+        const urlObj = new URL(url);
+        const params = new URLSearchParams(urlObj.search);
+        const q = params.get('q');
+        if (q) {
+          const parts = q.split(',');
+          if (parts.length === 2) {
+            return [parseFloat(parts[0]), parseFloat(parts[1])];
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing URL:", url, e);
+      }
+      return null;
+    }
+
+    async function loadPoints() {
+      try {
+        const response = await fetch(serverUrl);
+        const data = await response.json();
+        
+        document.getElementById('loading').style.display = 'none';
+
+        data.forEach(point => {
+          const coords = extractCoords(point.url);
+          if (coords) {
+            L.marker(coords).addTo(map)
+              .bindPopup(`<b>${point.name}</b><br>${point.comment || ''}<br><a href="${point.url}" target="_blank">Ver en Google Maps</a>`);
+          }
+        });
+      } catch (error) {
+        console.error("Error loading points:", error);
+        document.getElementById('loading').textContent = "Error al cargar los datos.";
+      }
+    }
+
+    loadPoints();
+  </script>
+</body>
+</html>
