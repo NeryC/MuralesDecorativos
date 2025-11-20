@@ -70,8 +70,8 @@
     <label>Comentario (opcional)</label>
     <textarea id="comment" rows="3"></textarea>
 
-    <label>Foto del Mural (Opcional)</label>
-    <input type="file" id="photoInput" accept="image/*" />
+    <label>Foto del Mural (Obligatorio)</label>
+    <input type="file" id="photoInput" accept="image/*" required />
     <canvas id="canvas" style="display:none;"></canvas>
 
     <label>Verificación (anti-spam)</label>
@@ -191,13 +191,18 @@
         return;
       }
 
+      if (photoInput.files.length === 0) {
+        status.textContent = "Debes subir una foto del mural.";
+        status.className = "error";
+        return;
+      }
+
       status.textContent = "Procesando imagen...";
       
       let imageBase64 = "";
-      if (photoInput.files.length > 0) {
-        try {
-          imageBase64 = await compressImage(photoInput.files[0]);
-        } catch (err) {
+      try {
+        imageBase64 = await compressImage(photoInput.files[0]);
+      } catch (err) {
           console.error(err);
           status.textContent = "Error al procesar la imagen.";
           status.className = "error";
