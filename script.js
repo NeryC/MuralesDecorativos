@@ -44,7 +44,7 @@ let captchaA = Math.floor(Math.random() * 9) + 1;
 let captchaB = Math.floor(Math.random() * 9) + 1;
 captchaText.textContent = `¿Cuánto es ${captchaA} + ${captchaB}?`;
 
-const serverUrl = "https://script.google.com/macros/s/AKfycbxE3_pgY8eIAwQgzFFvtyV4nZo5GTQWkgBqr8TAWvxVGjoJzs4u3nD8trO5NH1qPki74A/exec";
+const serverUrl = "https://script.google.com/macros/s/AKfycbyCGv33uFA9cA_8Kh6Jvd9jE_nZ8BSeURBPQsmt9W5AZBlrLSp3JqxRkWFoqRzd9VL1Ng/exec";
 
 function validarURL(url) {
   return url.includes("google.com/maps") || url.includes("maps.app.goo.gl");
