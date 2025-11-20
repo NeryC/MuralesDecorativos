@@ -98,8 +98,14 @@
         data.forEach(point => {
           const coords = extractCoords(point.url);
           if (coords) {
+            let popupContent = `<b>${point.name}</b><br>${point.comment || ''}`;
+            if (point.image) {
+              popupContent += `<br><img src="${point.image}" style="max-width:150px;margin-top:5px;border-radius:4px;">`;
+            }
+            popupContent += `<br><a href="${point.url}" target="_blank">Ver en Google Maps</a>`;
+
             L.marker(coords).addTo(map)
-              .bindPopup(`<b>${point.name}</b><br>${point.comment || ''}<br><a href="${point.url}" target="_blank">Ver en Google Maps</a>`);
+              .bindPopup(popupContent);
           }
         });
       } catch (error) {

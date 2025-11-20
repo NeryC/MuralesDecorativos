@@ -3,10 +3,10 @@
 // 3. Guarda (Ctrl + S).
 // 4. Haz clic en "Implementar" > "Nueva implementación".
 // 5. Selecciona tipo: "Aplicación web".
-// 6. Descripción: "Versión 2 (con lectura)".
+// 6. Descripción: "Versión 3 (Moderación)".
 // 7. Ejecutar como: "Yo" (tu email).
 // 8. Quién tiene acceso: "Cualquier persona" (IMPORTANTE).
-// 9. Copia la "URL de la aplicación web" y pégala en tus archivos html (index.html y mapa.html).
+// 9. Copia la "URL de la aplicación web" y pégala en tus archivos html.
 
 function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -14,10 +14,17 @@ function doPost(e) {
   // Parsear los datos que vienen como string JSON
   var data = JSON.parse(e.postData.contents);
   
-  // Agregar la fila con fecha, nombre, url, comentario
-  sheet.appendRow([new Date(), data.name, data.url, data.comment]);
+  // Columnas: Fecha, Nombre, Url, Comentario, Imagen, Estado
+  // Estado por defecto: "Pendiente"
+  sheet.appendRow([
+    new Date(), 
+    data.name, 
+    data.url, 
+    data.comment, 
+    data.image || "", // Imagen en Base64
+    "Pendiente"       // Estado inicial
+  ]);
   
-  // Retornar respuesta exitosa
   return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -28,15 +35,21 @@ function doGet(e) {
   var data = [];
   
   // Asumimos que la fila 0 son encabezados, empezamos de 1
-  // Columnas: 0=Fecha, 1=Nombre, 2=Url, 3=Comentario
+  // Columnas: 0=Fecha, 1=Nombre, 2=Url, 3=Comentario, 4=Imagen, 5=Estado
   for (var i = 1; i < rows.length; i++) {
     var row = rows[i];
-    if (row[2] && row[2].toString().includes("google.com/maps")) {
-      data.push({
-        name: row[1],
-        url: row[2],
-        comment: row[3]
-      });
+    var status = row[5]; // Columna F (Estado)
+    
+    // SOLO devolver si el estado es "Aprobado" (o si no hay estado, para compatibilidad vieja si quieres, pero mejor ser estricto)
+    if (status && status.toString().toLowerCase() === "aprobado") {
+      if (row[2] && row[2].toString().includes("google.com/maps")) {
+        data.push({
+          name: row[1],
+          url: row[2],
+          comment: row[3],
+          image: row[4] // Incluir imagen si existe
+        });
+      }
     }
   }
   
