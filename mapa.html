@@ -47,6 +47,36 @@
       z-index: 1001;
       font-weight: bold;
     }
+    /* Estilos para el Modal (Lightbox) */
+    #imageModal {
+      display: none; 
+      position: fixed; 
+      z-index: 2000; 
+      left: 0;
+      top: 0;
+      width: 100%; 
+      height: 100%; 
+      overflow: auto; 
+      background-color: rgba(0,0,0,0.9); 
+      align-items: center;
+      justify-content: center;
+    }
+    #modalImage {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+    }
+    #closeModal {
+      position: absolute;
+      top: 20px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -57,6 +87,12 @@
 
   <div id="loading" class="loading">Cargando puntos...</div>
   <div id="map"></div>
+
+  <!-- Modal para ver imagen grande -->
+  <div id="imageModal">
+    <span id="closeModal">&times;</span>
+    <img id="modalImage">
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -69,6 +105,26 @@
     }).addTo(map);
 
     const serverUrl = "https://script.google.com/macros/s/AKfycbyCGv33uFA9cA_8Kh6Jvd9jE_nZ8BSeURBPQsmt9W5AZBlrLSp3JqxRkWFoqRzd9VL1Ng/exec";
+
+    // Lógica del Modal
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const closeBtn = document.getElementById("closeModal");
+
+    function openModal(imageSrc) {
+      modal.style.display = "flex";
+      modalImg.src = imageSrc;
+    }
+
+    closeBtn.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    modal.onclick = function(e) {
+      if (e.target === modal) {
+        modal.style.display = "none";
+      }
+    }
 
     function extractCoords(url) {
       // Intenta extraer lat,lng de URLs como https://www.google.com/maps?q=-25.282,-57.635
@@ -98,11 +154,12 @@
         data.forEach(point => {
           const coords = extractCoords(point.url);
           if (coords) {
-            let popupContent = `<b>${point.name}</b><br>${point.comment || ''}`;
+            let popupContent = `<div style="text-align:center;"><b>${point.name}</b><br>${point.comment || ''}`;
             if (point.image) {
-              popupContent += `<br><img src="${point.image}" style="max-width:150px;margin-top:5px;border-radius:4px;">`;
+              // Imagen con estilo ajustado y evento onclick
+              popupContent += `<br><img src="${point.image}" style="width:100%; max-width:200px; height:auto; margin-top:5px; border-radius:4px; cursor:pointer;" onclick="openModal('${point.image}')">`;
             }
-            popupContent += `<br><a href="${point.url}" target="_blank">Ver en Google Maps</a>`;
+            popupContent += `<br><a href="${point.url}" target="_blank" style="display:inline-block; margin-top:5px;">Ver en Google Maps</a></div>`;
 
             L.marker(coords).addTo(map)
               .bindPopup(popupContent);
