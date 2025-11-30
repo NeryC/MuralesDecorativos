@@ -5,85 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enviar nueva ubicación</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f9f9f9;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    #map {
-      height: 300px;
-      width: 100%;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button {
-      margin-top: 20px;
-      background: #007bff;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background 0.3s ease;
-    }
-    button:hover { background: #0056b3; }
-    #status {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    .error { color: #c62828; }
-    .success { color: #2e7d32; }
-  </style>
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-  <div style="text-align: right; margin-bottom: 10px;">
-    <a href="mapa.html" style="text-decoration: none; color: #007bff; font-weight: bold;">🗺️ Ver Mapa de Murales</a>
-  </div>
-  <h2>Enviar nueva ubicación</h2>
-  <form id="locationForm">
-    <label>Nombre del lugar</label>
-    <input type="text" id="placeName" required />
-
-    <label>Selecciona la ubicación en el mapa</label>
-    <div id="map"></div>
+  <div class="container">
+      <header style="display: flex; justify-content: flex-end; background: transparent; box-shadow: none; padding: 0; margin-bottom: 20px;">
+        <a href="mapa.html" style="color: var(--primary-color); background: none; font-weight: bold; padding: 0;">🗺️ Ver Mapa de Murales</a>
+      </header>
+      
+      <h2>Enviar nueva ubicación</h2>
+      <form id="locationForm">
+        <label>Nombre del lugar</label>
+        <input type="text" id="placeName" required />
     
-    <label>Link de Google Maps (Automático)</label>
-    <input type="url" id="placeUrl" required readonly placeholder="Selecciona un punto en el mapa..." />
-
-    <label>Comentario (opcional)</label>
-    <textarea id="comment" rows="3"></textarea>
-
-    <label>Foto del Mural (Obligatorio)</label>
-    <input type="file" id="photoInput" accept="image/*" required />
-    <canvas id="canvas" style="display:none;"></canvas>
-
-    <label>Verificación (anti-spam)</label>
-    <span id="captchaText"></span>
-    <input type="number" id="captchaInput" required />
-
-    <button type="submit">Enviar</button>
-  </form>
-
-  <p id="status"></p>
+        <label>Candidato (opcional)</label>
+        <input type="text" id="candidateName" placeholder="Ej: Juan Pérez" />
+    
+        <label>Selecciona la ubicación en el mapa</label>
+        <div id="map"></div>
+        
+        <label>Link de Google Maps (Automático)</label>
+        <input type="url" id="placeUrl" required readonly placeholder="Selecciona un punto en el mapa..." />
+    
+        <label>Comentario (opcional)</label>
+        <textarea id="comment" rows="3"></textarea>
+    
+        <label>Foto del Mural (Obligatorio)</label>
+        <input type="file" id="photoInput" accept="image/*" required />
+        <canvas id="canvas" style="display:none;"></canvas>
+    
+        <label>Verificación (anti-spam)</label>
+        <span id="captchaText" style="display:block; margin-bottom:5px; font-weight:bold;"></span>
+        <input type="number" id="captchaInput" required />
+    
+        <button type="submit">Enviar</button>
+      </form>
+    
+      <p id="status" class="status-message"></p>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script type="module" src="assets/js/form.js"></script>
 </body>
 </html>

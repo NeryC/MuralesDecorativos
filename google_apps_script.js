@@ -12,17 +12,46 @@ function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = JSON.parse(e.postData.contents);
   
-  sheet.appendRow([
-    new Date(), 
-    data.name, 
-    data.url, 
-    data.comment, 
-    data.image || "", 
-    "Pendiente"
-  ]);
-  
-  return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
-    .setMimeType(ContentService.MimeType.JSON);
+  if (data.action === "report_removed") {
+    // Usar el ID (número de fila) directamente
+    var rowId = parseInt(data.id);
+    
+    if (rowId && rowId > 1) { // Asegurar que es un ID válido y no es el encabezado
+        try {
+            // Actualizar estado a "modificado_pendiente" (Columna F -> índice 5)
+            sheet.getRange(rowId, 6).setValue("modificado_pendiente");
+            
+            // Guardar nuevo comentario en Columna G (índice 6)
+            sheet.getRange(rowId, 7).setValue(data.new_comment || "");
+            
+            // Guardar nueva imagen en Columna H (índice 7)
+            sheet.getRange(rowId, 8).setValue(data.new_image || "");
+            
+            return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+                .setMimeType(ContentService.MimeType.JSON);
+        } catch (err) {
+             return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": err.message }))
+                .setMimeType(ContentService.MimeType.JSON);
+        }
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": "ID inválido" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+  } else {
+    // Flujo normal de agregar nuevo
+    sheet.appendRow([
+      new Date(), 
+      data.name, 
+      data.url, 
+      data.comment, 
+      data.image || "", 
+      "pendiente"
+    ]);
+    
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function doGet(e) {
@@ -34,15 +63,28 @@ function doGet(e) {
     var row = rows[i];
     var status = row[5]; // Columna F
     
-    if (status && status.toString().toLowerCase() === "aprobado") {
-      if (row[2] && row[2].toString().includes("google.com/maps")) {
-        data.push({
-          name: row[1],
-          url: row[2],
-          comment: row[3],
-          image: row[4]
-        });
-      }
+    if (status) {
+        var statusStr = status.toString().toLowerCase();
+        
+        if (statusStr === "aprobado" || statusStr === "modificado_aprobado") {
+          if (row[2] && row[2].toString().includes("google.com/maps")) {
+            var item = {
+              id: i + 1, // El ID es el número de fila (1-based)
+              name: row[1],
+              url: row[2],
+              comment: row[3],
+              image: row[4],
+              status: statusStr
+            };
+            
+            if (statusStr === "modificado_aprobado") {
+                item.new_comment = row[6]; // Columna G
+                item.new_image = row[7];   // Columna H
+            }
+            
+            data.push(item);
+          }
+        }
     }
   }
   
