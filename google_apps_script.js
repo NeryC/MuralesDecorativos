@@ -66,7 +66,7 @@ function doGet(e) {
     if (status) {
         var statusStr = status.toString().toLowerCase();
         
-        if (statusStr === "aprobado" || statusStr === "modificado_aprobado") {
+        if (statusStr === "aprobado" || statusStr === "modificado_aprobado" || statusStr === "modificado_pendiente") {
           if (row[2] && row[2].toString().includes("google.com/maps")) {
             var item = {
               id: i + 1, // El ID es el número de fila (1-based)
