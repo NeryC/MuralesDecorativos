@@ -27,6 +27,45 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
     }
 });
 
+// Function to compress image
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const maxWidth = 800;
+        const maxHeight = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // JPEG compression 70%
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
+
 document.getElementById('reportForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -45,11 +84,8 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
   submitBtn.textContent = "Enviando...";
   status.textContent = "";
 
-  const file = photoInput.files[0];
-  const reader = new FileReader();
-
-  reader.onloadend = async function() {
-    const base64Image = reader.result;
+  try {
+    const base64Image = await compressImage(photoInput.files[0]);
 
     const payload = {
       action: "report_removed",
@@ -58,32 +94,32 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
       new_image: base64Image
     };
 
-    try {
-      const response = await fetch(CONFIG.SERVER_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      
-      const result = await response.json();
+    const response = await fetch(CONFIG.SERVER_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
 
-      if (result.result === "success") {
-        status.innerHTML = '<span class="status-message success">¡Reporte enviado con éxito! Gracias por tu colaboración.</span>';
-        document.getElementById('reportForm').reset();
-        document.getElementById('preview').style.display = 'none';
-        setTimeout(() => {
-            window.location.href = 'mapa.html';
-        }, 3000);
-      } else {
-        throw new Error(result.error || "Error desconocido");
-      }
-
-    } catch (error) {
-      console.error(error);
-      status.innerHTML = '<span class="status-message error">Error al enviar: ' + error.message + '</span>';
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Enviar Reporte";
+    if (result.result === "success") {
+      status.innerHTML = '<span class="status-message success">¡Reporte enviado con éxito! Gracias por tu colaboración.</span>';
+      document.getElementById('reportForm').reset();
+      document.getElementById('preview').style.display = 'none';
+      setTimeout(() => {
+          window.location.href = 'mapa.html';
+      }, 3000);
+    } else {
+      throw new Error(result.error || "Error desconocido");
     }
-  };
 
-  reader.readAsDataURL(file);
+  } catch (error) {
+    console.error(error);
+    status.innerHTML = '<span class="status-message error">Error al enviar: ' + error.message + '</span>';
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Enviar Reporte";
+  }
 });
