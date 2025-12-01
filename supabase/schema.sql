@@ -36,13 +36,12 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_murales_updated_at BEFORE UPDATE ON murales
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Row Level Security (RLS)
 ALTER TABLE murales ENABLE ROW LEVEL SECURITY;
 
--- Política: Cualquiera puede leer murales aprobados o modificados aprobados
+-- Política: Cualquiera puede leer murales (incluye pendientes para panel admin)
 CREATE POLICY "Murales aprobados son públicos"
   ON murales FOR SELECT
-  USING (estado IN ('aprobado', 'modificado_aprobado', 'modificado_pendiente'));
+  USING (estado IN ('pendiente', 'aprobado', 'rechazado', 'modificado_pendiente', 'modificado_aprobado'));
 
 -- Política: Cualquiera puede insertar nuevos murales (quedan pendientes)
 CREATE POLICY "Cualquiera puede crear murales"

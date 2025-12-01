@@ -134,7 +134,9 @@ export default function AdminPage() {
                               onClick={() => setSelectedImage(mural.imagen_url)}
                             />
                           )}
-                          {mural.estado === 'modificado_pendiente' && mural.nueva_imagen_url && (
+                          {(mural.estado === 'modificado_pendiente' ||
+                            mural.estado === 'modificado_aprobado') &&
+                            mural.nueva_imagen_url && (
                             <img
                               src={mural.nueva_imagen_thumbnail_url || mural.nueva_imagen_url}
                               alt="Nueva"
@@ -146,7 +148,9 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-sm max-w-xs">
                         <div className="truncate">{mural.comentario || '-'}</div>
-                        {mural.estado === 'modificado_pendiente' && mural.nuevo_comentario && (
+                        {(mural.estado === 'modificado_pendiente' ||
+                          mural.estado === 'modificado_aprobado') &&
+                          mural.nuevo_comentario && (
                           <div className="truncate text-red-600 mt-1">
                             Nuevo: {mural.nuevo_comentario}
                           </div>

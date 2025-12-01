@@ -69,83 +69,101 @@ function ReportarContent() {
 
   if (!muralId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 py-8 px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center">
-            <p className="text-red-600 font-semibold">
-              Error: No se especificó ningún mural. Vuelve al mapa e intenta de nuevo.
-            </p>
-            <Link href="/" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-              🗺️ Volver al Mapa
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex flex-col items-center justify-center">
+        <div className="w-[95%] max-w-[95%] h-[calc(100vh-2rem)] flex flex-col gap-4 md:gap-6">
+          <header className="flex-none bg-white rounded-2xl shadow-sm px-6 py-4 flex justify-between items-center">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+              Reportar Mural
+            </h1>
+            <Link
+              href="/"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-sm"
+            >
+              🗺️ Ver Mapa
             </Link>
-          </div>
+          </header>
+
+          <main className="flex-1 min-h-0 w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 overflow-auto">
+            <div className="max-w-2xl mx-auto">
+              <p className="text-red-600 font-semibold">
+                Error: No se especificó ningún mural. Vuelve al mapa e intenta de nuevo.
+              </p>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-        <div className="flex justify-end mb-4">
-          <Link href="/" className="text-blue-600 hover:text-blue-800 font-semibold">
-            🗺️ Volver al Mapa
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex flex-col items-center justify-center">
+      <div className="w-[95%] max-w-[95%] h-[calc(100vh-2rem)] flex flex-col gap-4 md:gap-6">
+        <header className="flex-none bg-white rounded-2xl shadow-sm px-6 py-4 flex justify-between items-center">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+            Reportar Mural Eliminado o Modificado
+          </h1>
+          <Link
+            href="/"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-sm"
+          >
+            🗺️ Ver Mapa
           </Link>
-        </div>
+        </header>
 
-        <h1 className="text-3xl font-bold text-red-600 mb-4">
-          Reportar Mural Eliminado o Modificado
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Por favor, sube una foto actual del lugar y un comentario explicando la situación.
-        </p>
+        <main className="flex-1 min-h-0 w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 overflow-auto">
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+            <p className="text-gray-600">
+              Por favor, sube una foto actual del lugar y un comentario explicando la situación.
+            </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mural a reportar
-            </label>
-            <Input value={muralName || `Mural #${muralId}`} disabled />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nueva Foto (Obligatorio) *
-            </label>
-            <ImageUploader
-              onUploadComplete={handleImageUpload}
-              onUploadError={(error) => setStatus({ type: 'error', message: error })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Comentario (Opcional)
-            </label>
-            <Textarea
-              value={formData.nuevo_comentario}
-              onChange={(e) => setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))}
-              rows={3}
-              placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
-            />
-          </div>
-
-          <Button type="submit" variant="danger" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
-          </Button>
-
-          {status && (
-            <div
-              className={`p-4 rounded-md ${
-                status.type === 'success'
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
-              }`}
-            >
-              {status.message}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mural a reportar
+              </label>
+              <Input value={muralName || `Mural #${muralId}`} disabled />
             </div>
-          )}
-        </form>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nueva Foto (Obligatorio) *
+              </label>
+              <ImageUploader
+                onUploadComplete={handleImageUpload}
+                onUploadError={(error) => setStatus({ type: 'error', message: error })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Comentario (Opcional)
+              </label>
+              <Textarea
+                value={formData.nuevo_comentario}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))
+                }
+                rows={3}
+                placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
+              />
+            </div>
+
+            <Button type="submit" variant="danger" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
+            </Button>
+
+            {status && (
+              <div
+                className={`p-4 rounded-md ${
+                  status.type === 'success'
+                    ? 'bg-green-50 text-green-800 border border-green-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}
+              >
+                {status.message}
+              </div>
+            )}
+          </form>
+        </main>
       </div>
     </div>
   );
