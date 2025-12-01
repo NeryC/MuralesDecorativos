@@ -5,10 +5,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DEFAULT_COORDINATES } from '@/lib/constants';
 import { extractCoordinates } from '@/lib/utils';
-import { Mural } from '@/lib/types';
+import { MuralWithModificaciones } from '@/lib/types';
 
 interface MapViewProps {
-  murales: Mural[];
+  murales: MuralWithModificaciones[];
   onImageClick?: (imageUrl: string) => void;
 }
 
@@ -72,27 +72,44 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
 
       const isModified = mural.estado === 'modificado_aprobado';
       
+      // Obtener la última modificación aprobada para mostrar antes/después
+      const modAprobada = mural.mural_modificaciones
+        ?.filter((mod) => mod.estado_solicitud === 'aprobada')
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+        )[0];
+      
       let popupContent = `<div style="text-align:center;"><b>${mural.nombre}</b>`;
 
-      if (isModified) {
+      if (isModified && modAprobada) {
         popupContent += `<br><span style="color:red; font-weight:bold;">⚠️ REPORTE DE CAMBIO</span>`;
         popupContent += `<div style="display:flex; gap:5px; margin-top:5px;">`;
         
-        // Before
+        // Before - usar la imagen original guardada en la modificación
         popupContent += `<div style="flex:1;"><u>Antes:</u><br>`;
-        if (mural.imagen_thumbnail_url || mural.imagen_url) {
+        if (modAprobada.imagen_original_url) {
+          const imgUrl = modAprobada.imagen_original_thumbnail_url || modAprobada.imagen_original_url;
+          popupContent += `<img src="${imgUrl}" style="width:100%; max-width:100px; height:auto; border-radius:4px; cursor:pointer;" onclick="window.openImageModal('${modAprobada.imagen_original_url}')">`;
+        } else if (mural.imagen_thumbnail_url || mural.imagen_url) {
+          // Fallback si no hay imagen original guardada (modificaciones antiguas)
           const imgUrl = mural.imagen_thumbnail_url || mural.imagen_url;
           popupContent += `<img src="${imgUrl}" style="width:100%; max-width:100px; height:auto; border-radius:4px; cursor:pointer;" onclick="window.openImageModal('${mural.imagen_url}')">`;
         }
         popupContent += `<br><small>${mural.comentario || ''}</small></div>`;
 
-        // After
+        // After - usar la imagen de la modificación aprobada
         popupContent += `<div style="flex:1;"><u>Ahora:</u><br>`;
-        if (mural.nueva_imagen_thumbnail_url || mural.nueva_imagen_url) {
-          const imgUrl = mural.nueva_imagen_thumbnail_url || mural.nueva_imagen_url;
-          popupContent += `<img src="${imgUrl}" style="width:100%; max-width:100px; height:auto; border-radius:4px; cursor:pointer;" onclick="window.openImageModal('${mural.nueva_imagen_url}')">`;
+        if (modAprobada.nueva_imagen_url) {
+          const imgUrl = modAprobada.nueva_imagen_thumbnail_url || modAprobada.nueva_imagen_url;
+          popupContent += `<img src="${imgUrl}" style="width:100%; max-width:100px; height:auto; border-radius:4px; cursor:pointer;" onclick="window.openImageModal('${modAprobada.nueva_imagen_url}')">`;
+        } else if (mural.imagen_thumbnail_url || mural.imagen_url) {
+          // Fallback a la imagen actual del mural
+          const imgUrl = mural.imagen_thumbnail_url || mural.imagen_url;
+          popupContent += `<img src="${imgUrl}" style="width:100%; max-width:100px; height:auto; border-radius:4px; cursor:pointer;" onclick="window.openImageModal('${mural.imagen_url}')">`;
         }
-        popupContent += `<br><small>${mural.nuevo_comentario || ''}</small></div>`;
+        popupContent += `<br><small>${modAprobada.nuevo_comentario || mural.comentario || ''}</small></div>`;
         
         popupContent += `</div>`;
       } else {

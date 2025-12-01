@@ -48,6 +48,10 @@ CREATE TABLE mural_modificaciones (
   nueva_imagen_url TEXT NOT NULL,
   nueva_imagen_thumbnail_url TEXT,
   
+  -- Imagen original del mural al momento de aprobar (para poder mostrar antes/después)
+  imagen_original_url TEXT,
+  imagen_original_thumbnail_url TEXT,
+  
   -- Estado de la solicitud de modificación
   estado_solicitud TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado_solicitud IN ('pendiente', 'aprobada', 'rechazada')),
   procesado_at TIMESTAMP WITH TIME ZONE,
@@ -95,6 +99,12 @@ CREATE POLICY "Cualquiera puede reportar eliminados"
   USING (true)
   WITH CHECK (estado IN ('modificado_pendiente', 'pendiente', 'aprobado', 'rechazado', 'modificado_aprobado'));
 
+-- Política: Cualquiera puede actualizar solicitudes de modificación (para aprobar/rechazar)
+CREATE POLICY "Cualquiera puede actualizar solicitudes de modificación"
+  ON mural_modificaciones FOR UPDATE
+  USING (true)
+  WITH CHECK (estado_solicitud IN ('pendiente', 'aprobada', 'rechazada'));
+
 -- Storage bucket para imágenes
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('murales', 'murales', true)
@@ -109,3 +119,9 @@ CREATE POLICY "Cualquiera puede subir imágenes"
 CREATE POLICY "Imágenes son públicas"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'murales');
+
+-- Migración: Agregar campos para guardar imagen original en modificaciones
+-- (Para poder mostrar antes/después cuando se aprueba una modificación)
+ALTER TABLE mural_modificaciones
+  ADD COLUMN IF NOT EXISTS imagen_original_url TEXT,
+  ADD COLUMN IF NOT EXISTS imagen_original_thumbnail_url TEXT;

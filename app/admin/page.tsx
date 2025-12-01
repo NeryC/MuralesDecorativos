@@ -13,6 +13,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'modificado_pendiente'>('pendiente');
+  const [processingModificacion, setProcessingModificacion] = useState<string | null>(null);
+  const [updatingEstado, setUpdatingEstado] = useState<string | null>(null);
 
   const { getUltimaModificacionPendiente, getImagenAmostrar } = useMuralHelpers(filter);
 
@@ -23,10 +25,15 @@ export default function AdminPage() {
   const fetchMurales = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/murales');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setMurales(data);
+      // Asegurar que siempre sea un array
+      setMurales(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching murales:', error);
+      setMurales([]); // Asegurar que sea un array vacío en caso de error
     } finally {
       setLoading(false);
     }
@@ -34,6 +41,8 @@ export default function AdminPage() {
 
   const handleProcesarModificacion = useCallback(
     async (muralId: string, modificacionId: string, action: 'approve' | 'reject') => {
+      const key = `${muralId}-${modificacionId}`;
+      setProcessingModificacion(key);
       try {
         const response = await fetch(
           `/api/admin/murales/${muralId}/modificaciones/${modificacionId}`,
@@ -45,7 +54,15 @@ export default function AdminPage() {
         );
 
         if (response.ok) {
-          fetchMurales();
+          // Forzar actualización de los datos
+          await fetchMurales();
+          
+          // Si se aprobó, redirigir al mapa después de unos segundos
+          if (action === 'approve') {
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 3000);
+          }
         } else {
           const errorData = await response.json().catch(() => ({}));
           alert(errorData.error || 'Error al procesar la solicitud de modificación');
@@ -53,6 +70,8 @@ export default function AdminPage() {
       } catch (error) {
         console.error('Error processing modification:', error);
         alert('Error al procesar la solicitud de modificación');
+      } finally {
+        setProcessingModificacion(null);
       }
     },
     [fetchMurales]
@@ -60,6 +79,7 @@ export default function AdminPage() {
 
   const updateEstado = useCallback(
     async (id: string, estado: string) => {
+      setUpdatingEstado(id);
       try {
         const response = await fetch(`/api/murales/${id}`, {
           method: 'PATCH',
@@ -68,39 +88,52 @@ export default function AdminPage() {
         });
 
         if (response.ok) {
-          fetchMurales();
+          await fetchMurales();
         } else {
           alert('Error al actualizar el estado');
         }
       } catch (error) {
         console.error('Error updating estado:', error);
         alert('Error al actualizar el estado');
+      } finally {
+        setUpdatingEstado(null);
       }
     },
     [fetchMurales]
   );
 
   const filteredMurales = useMemo(
-    () =>
-      murales.filter((mural) => {
+    () => {
+      if (!Array.isArray(murales)) return [];
+      return murales.filter((mural) => {
         if (filter === 'all') return true;
         if (filter === 'pendiente') return mural.estado === 'pendiente';
         if (filter === 'modificado_pendiente') {
           return mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente');
         }
         return true;
-      }),
+      });
+    },
     [murales, filter]
   );
 
   const counts = useMemo(
-    () => ({
-      pendiente: murales.filter((mural) => mural.estado === 'pendiente').length,
-      modificadoPendiente: murales.filter((mural) =>
-        mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente')
-      ).length,
-      total: murales.length,
-    }),
+    () => {
+      if (!Array.isArray(murales)) {
+        return {
+          pendiente: 0,
+          modificadoPendiente: 0,
+          total: 0,
+        };
+      }
+      return {
+        pendiente: murales.filter((mural) => mural.estado === 'pendiente').length,
+        modificadoPendiente: murales.filter((mural) =>
+          mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente')
+        ).length,
+        total: murales.length,
+      };
+    },
     [murales]
   );
 
@@ -152,6 +185,9 @@ export default function AdminPage() {
                       onProcesarModificacion={handleProcesarModificacion}
                       getUltimaModificacionPendiente={getUltimaModificacionPendiente}
                       getImagenAmostrar={getImagenAmostrar}
+                      isProcessingModificacion={processingModificacion !== null}
+                      isUpdatingEstado={updatingEstado === mural.id}
+                      processingModificacionKey={processingModificacion}
                     />
                   ))}
                 </tbody>

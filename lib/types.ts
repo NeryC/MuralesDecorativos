@@ -32,6 +32,8 @@ export interface MuralModificacion {
   nuevo_comentario?: string | null;
   nueva_imagen_url: string;
   nueva_imagen_thumbnail_url?: string | null;
+  imagen_original_url?: string | null;
+  imagen_original_thumbnail_url?: string | null;
   estado_solicitud: 'pendiente' | 'aprobada' | 'rechazada';
   procesado_at?: string | null;
   reportado_at?: string | null;

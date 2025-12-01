@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFormSubmit } from '@/hooks/use-form-submit';
+import { compressImage, uploadImageWithThumbnail } from '@/lib/utils';
+import { IMAGE_COMPRESSION } from '@/lib/constants';
 import type { ReportMuralDTO } from '@/lib/types';
 
 const INITIAL_FORM_DATA: ReportMuralDTO = {
@@ -24,6 +26,9 @@ function ReportarContent() {
   const muralName = searchParams.get('name');
 
   const [formData, setFormData] = useState<ReportMuralDTO>(INITIAL_FORM_DATA);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   const { status, isSubmitting, submit, setError } = useFormSubmit<ReportMuralDTO>({
     onSubmit: async (data) => {
@@ -37,6 +42,9 @@ function ReportarContent() {
       });
     },
     onSuccess: () => {
+      setFormData(INITIAL_FORM_DATA);
+      setSelectedFile(null);
+      setResetKey((prev) => prev + 1); // Reset image uploader
       setTimeout(() => {
         window.location.href = '/';
       }, 3000);
@@ -45,18 +53,14 @@ function ReportarContent() {
     errorMessage: 'Error al enviar el reporte.',
   });
 
-  const handleImageUpload = useCallback((originalUrl: string, thumbnailUrl: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      nueva_imagen_url: originalUrl,
-      nueva_imagen_thumbnail_url: thumbnailUrl,
-    }));
+  const handleFileSelect = useCallback((file: File | null) => {
+    setSelectedFile(file);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nueva_imagen_url) {
+    if (!selectedFile) {
       setError('Por favor selecciona una foto.');
       return;
     }
@@ -66,7 +70,44 @@ function ReportarContent() {
       return;
     }
 
-    await submit(formData);
+    try {
+      setIsUploadingImage(true);
+
+      // Compress original and thumbnail in parallel
+      const [compressedOriginal, compressedThumbnail] = await Promise.all([
+        compressImage(
+          selectedFile,
+          IMAGE_COMPRESSION.maxWidth,
+          IMAGE_COMPRESSION.maxHeight,
+          IMAGE_COMPRESSION.quality
+        ),
+        compressImage(
+          selectedFile,
+          IMAGE_COMPRESSION.thumbnailMaxWidth,
+          IMAGE_COMPRESSION.thumbnailMaxHeight,
+          IMAGE_COMPRESSION.thumbnailQuality
+        ),
+      ]);
+
+      // Convert Blobs to Files
+      const originalFile = new File([compressedOriginal], 'original.jpg', { type: 'image/jpeg' });
+      const thumbnailFile = new File([compressedThumbnail], 'thumbnail.jpg', { type: 'image/jpeg' });
+
+      // Upload images
+      const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
+
+      // Update form data with image URLs and submit
+      await submit({
+        ...formData,
+        nueva_imagen_url: originalUrl,
+        nueva_imagen_thumbnail_url: thumbnailUrl,
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError(error instanceof Error ? error.message : 'Error al subir la imagen');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   if (!muralId) {
@@ -94,8 +135,10 @@ function ReportarContent() {
 
         <FormField label="Nueva Foto (Obligatorio)" required>
           <ImageUploader
-            onUploadComplete={handleImageUpload}
-            onUploadError={(error) => setError(error)}
+            onFileSelect={handleFileSelect}
+            onError={(error) => setError(error)}
+            disabled={isSubmitting || isUploadingImage}
+            resetKey={resetKey}
           />
         </FormField>
 
@@ -110,8 +153,8 @@ function ReportarContent() {
           />
         </FormField>
 
-        <Button type="submit" variant="danger" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
+        <Button type="submit" variant="danger" disabled={isSubmitting || isUploadingImage} className="w-full">
+          {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
         </Button>
 
         {status && (

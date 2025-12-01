@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import ImageModal from '@/components/image-modal';
 import { PageShell } from '@/components/page-shell';
-import { Mural } from '@/lib/types';
+import { MuralWithModificaciones } from '@/lib/types';
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import('@/components/map-view'), {
@@ -19,7 +19,7 @@ const MapView = dynamic(() => import('@/components/map-view'), {
 });
 
 export default function HomePage() {
-  const [murales, setMurales] = useState<Mural[]>([]);
+  const [murales, setMurales] = useState<MuralWithModificaciones[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 

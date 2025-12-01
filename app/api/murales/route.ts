@@ -12,7 +12,7 @@ export async function GET() {
     
     const { data, error } = await supabase
       .from('murales')
-      .select('*')
+      .select('*, mural_modificaciones(*)')
       .in('estado', [MURAL_ESTADOS.APROBADO, MURAL_ESTADOS.MODIFICADO_APROBADO, MURAL_ESTADOS.MODIFICADO_PENDIENTE])
       .order('created_at', { ascending: false });
 
@@ -21,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

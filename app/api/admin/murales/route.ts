@@ -17,12 +17,15 @@ export async function GET() {
 
     if (error) {
       console.error('Error fetching all murales:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Devolver array vacío en lugar de objeto de error para mantener consistencia
+      return NextResponse.json([]);
     }
 
-    return NextResponse.json(data);
+    // Asegurar que siempre devolvemos un array
+    return NextResponse.json(Array.isArray(data) ? data : []);
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    // Devolver array vacío en caso de error inesperado
+    return NextResponse.json([]);
   }
 }

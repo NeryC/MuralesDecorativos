@@ -59,23 +59,33 @@ export async function PATCH(
 
     // 2) Si la acción es rechazar, sólo actualizamos la solicitud
     if (action === 'reject') {
-      const { error: updateModError } = await supabase
+      const { data: updatedMod, error: updateModError } = await supabase
         .from('mural_modificaciones')
         .update({
           estado_solicitud: 'rechazada',
           procesado_at: new Date().toISOString(),
         })
-        .eq('id', modId);
+        .eq('id', modId)
+        .select()
+        .single();
 
       if (updateModError) {
         console.error('Error rejecting modification:', updateModError);
         return NextResponse.json(
-          { error: 'No se pudo rechazar la solicitud de modificación' },
+          { error: 'No se pudo rechazar la solicitud de modificación', details: updateModError.message },
           { status: 500 }
         );
       }
 
-      return NextResponse.json({ success: true, action: 'reject' });
+      if (!updatedMod) {
+        console.error('No se encontró la modificación después de actualizar');
+        return NextResponse.json(
+          { error: 'No se pudo verificar la actualización de la solicitud' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true, action: 'reject', data: updatedMod });
     }
 
     // 3) Acción: approve
@@ -105,47 +115,111 @@ export async function PATCH(
     }
 
     // 4) Aplicar los cambios de la solicitud al mural
+    // Validar que tenemos los datos necesarios
+    if (!modificacion.nueva_imagen_url) {
+      return NextResponse.json(
+        { error: 'La modificación no tiene una nueva imagen válida' },
+        { status: 400 }
+      );
+    }
+
+    const updateMuralData = {
+      imagen_url: modificacion.nueva_imagen_url,
+      imagen_thumbnail_url: modificacion.nueva_imagen_thumbnail_url || mural.imagen_thumbnail_url || null,
+      comentario:
+        modificacion.nuevo_comentario !== null &&
+        modificacion.nuevo_comentario !== undefined &&
+        modificacion.nuevo_comentario !== ''
+          ? modificacion.nuevo_comentario
+          : mural.comentario,
+      estado: MURAL_ESTADOS.MODIFICADO_APROBADO,
+    };
+
     const { error: updateMuralError } = await supabase
       .from('murales')
-      .update({
-        imagen_url: modificacion.nueva_imagen_url,
-        imagen_thumbnail_url: modificacion.nueva_imagen_thumbnail_url || mural.imagen_thumbnail_url,
-        comentario:
-          modificacion.nuevo_comentario !== null &&
-          modificacion.nuevo_comentario !== undefined &&
-          modificacion.nuevo_comentario !== ''
-            ? modificacion.nuevo_comentario
-            : mural.comentario,
-        estado: MURAL_ESTADOS.MODIFICADO_APROBADO,
-      })
+      .update(updateMuralData)
       .eq('id', id);
 
     if (updateMuralError) {
       console.error('Error updating mural with approved modification:', updateMuralError);
       return NextResponse.json(
-        { error: 'No se pudo aplicar la modificación al mural' },
+        { 
+          error: 'No se pudo aplicar la modificación al mural', 
+          details: updateMuralError.message,
+          code: updateMuralError.code 
+        },
         { status: 500 }
       );
     }
 
-    // 5) Marcar la solicitud como aprobada
-    const { error: approveModError } = await supabase
+    // 5) Guardar la imagen original y marcar la solicitud como aprobada en una sola operación
+    // Nota: Si los campos imagen_original_url no existen, solo actualizamos el estado
+    const updateData: {
+      estado_solicitud: string;
+      procesado_at: string;
+      imagen_original_url?: string;
+      imagen_original_thumbnail_url?: string | null;
+    } = {
+      estado_solicitud: 'aprobada',
+      procesado_at: new Date().toISOString(),
+    };
+
+    // Intentar agregar los campos de imagen original si existen
+    // Si no existen, la actualización seguirá funcionando sin ellos
+    try {
+      updateData.imagen_original_url = mural.imagen_url;
+      updateData.imagen_original_thumbnail_url = mural.imagen_thumbnail_url;
+    } catch (e) {
+      // Si hay error, continuamos sin estos campos
+      console.warn('Could not set original image fields, continuing without them');
+    }
+
+    const { data: updatedMod, error: approveModError } = await supabase
       .from('mural_modificaciones')
-      .update({
-        estado_solicitud: 'aprobada',
-        procesado_at: new Date().toISOString(),
-      })
-      .eq('id', modId);
+      .update(updateData)
+      .eq('id', modId)
+      .select()
+      .single();
 
     if (approveModError) {
       console.error('Error marking modification as approved:', approveModError);
+      // Si el error es porque los campos no existen, intentamos sin ellos
+      if (approveModError.message?.includes('column') || approveModError.code === '42703') {
+        const { data: updatedModFallback, error: fallbackError } = await supabase
+          .from('mural_modificaciones')
+          .update({
+            estado_solicitud: 'aprobada',
+            procesado_at: new Date().toISOString(),
+          })
+          .eq('id', modId)
+          .select()
+          .single();
+
+        if (fallbackError) {
+          return NextResponse.json(
+            { error: 'No se pudo marcar la solicitud como aprobada', details: fallbackError.message },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ success: true, action: 'approve' });
+      }
+
       return NextResponse.json(
-        { error: 'No se pudo marcar la solicitud como aprobada' },
+        { error: 'No se pudo marcar la solicitud como aprobada', details: approveModError.message },
         { status: 500 }
       );
     }
 
-    // 6) Opcional: marcar otras solicitudes pendientes del mismo mural como rechazadas
+    if (!updatedMod) {
+      console.error('No se encontró la modificación después de actualizar');
+      return NextResponse.json(
+        { error: 'No se pudo verificar la actualización de la solicitud' },
+        { status: 500 }
+      );
+    }
+
+    // 7) Opcional: marcar otras solicitudes pendientes del mismo mural como rechazadas
     const { error: rejectOthersError } = await supabase
       .from('mural_modificaciones')
       .update({

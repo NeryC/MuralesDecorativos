@@ -12,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCaptcha } from '@/hooks/use-captcha';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { isValidGoogleMapsUrl } from '@/lib/utils';
+import { compressImage, isValidGoogleMapsUrl, uploadImageWithThumbnail } from '@/lib/utils';
+import { IMAGE_COMPRESSION } from '@/lib/constants';
 import type { CreateMuralDTO } from '@/lib/types';
 
 const INITIAL_FORM_DATA: CreateMuralDTO = {
@@ -26,6 +27,9 @@ const INITIAL_FORM_DATA: CreateMuralDTO = {
 
 export default function NewMuralPage() {
   const [formData, setFormData] = useState<CreateMuralDTO>(INITIAL_FORM_DATA);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const captcha = useCaptcha();
 
   const { status, isSubmitting, submit, setError } = useFormSubmit<CreateMuralDTO>({
@@ -38,6 +42,8 @@ export default function NewMuralPage() {
     },
     onSuccess: () => {
       setFormData(INITIAL_FORM_DATA);
+      setSelectedFile(null);
+      setResetKey((prev) => prev + 1); // Reset map and image uploader
       captcha.reset();
     },
     successMessage: '¡Enviado! Tu mural está pendiente de aprobación.',
@@ -51,12 +57,8 @@ export default function NewMuralPage() {
     []
   );
 
-  const handleImageUpload = useCallback((originalUrl: string, thumbnailUrl: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      imagen_url: originalUrl,
-      imagen_thumbnail_url: thumbnailUrl,
-    }));
+  const handleFileSelect = useCallback((file: File | null) => {
+    setSelectedFile(file);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,12 +75,49 @@ export default function NewMuralPage() {
       return;
     }
 
-    if (!formData.imagen_url) {
-      setError('Debes subir una foto del mural.');
+    if (!selectedFile) {
+      setError('Debes seleccionar una foto del mural.');
       return;
     }
 
-    await submit(formData);
+    try {
+      setIsUploadingImage(true);
+
+      // Compress original and thumbnail in parallel
+      const [compressedOriginal, compressedThumbnail] = await Promise.all([
+        compressImage(
+          selectedFile,
+          IMAGE_COMPRESSION.maxWidth,
+          IMAGE_COMPRESSION.maxHeight,
+          IMAGE_COMPRESSION.quality
+        ),
+        compressImage(
+          selectedFile,
+          IMAGE_COMPRESSION.thumbnailMaxWidth,
+          IMAGE_COMPRESSION.thumbnailMaxHeight,
+          IMAGE_COMPRESSION.thumbnailQuality
+        ),
+      ]);
+
+      // Convert Blobs to Files
+      const originalFile = new File([compressedOriginal], 'original.jpg', { type: 'image/jpeg' });
+      const thumbnailFile = new File([compressedThumbnail], 'thumbnail.jpg', { type: 'image/jpeg' });
+
+      // Upload images
+      const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
+
+      // Update form data with image URLs and submit
+      await submit({
+        ...formData,
+        imagen_url: originalUrl,
+        imagen_thumbnail_url: thumbnailUrl,
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError(error instanceof Error ? error.message : 'Error al subir la imagen');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   return (
@@ -101,6 +140,7 @@ export default function NewMuralPage() {
         </FormField>
 
         <MapField
+          key={resetKey}
           value={formData.url_maps}
           onLocationSelect={handleLocationSelect}
           initialZoom={20}
@@ -116,8 +156,10 @@ export default function NewMuralPage() {
 
         <FormField label="Foto del Mural (Obligatorio)" required>
           <ImageUploader
-            onUploadComplete={handleImageUpload}
-            onUploadError={(error) => setError(error)}
+            onFileSelect={handleFileSelect}
+            onError={(error) => setError(error)}
+            disabled={isSubmitting || isUploadingImage}
+            resetKey={resetKey}
           />
         </FormField>
 
@@ -128,8 +170,8 @@ export default function NewMuralPage() {
           disabled={!captcha.isClient}
         />
 
-        <Button type="submit" disabled={isSubmitting} className="w-full flex-shrink-0">
-          {isSubmitting ? 'Enviando...' : 'Enviar'}
+        <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full flex-shrink-0">
+          {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar'}
         </Button>
 
         {status && (
