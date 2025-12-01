@@ -42,3 +42,22 @@ body {
   height: 40px;
   animation: spin 1s linear infinite;
 }
+
+/* React Modal styles for image viewer */
+.image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  outline: none;
+  background: transparent;
+}

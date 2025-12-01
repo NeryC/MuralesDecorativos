@@ -57,8 +57,12 @@ export default function HomePage() {
             ➕ Agregar Nuevo
           </Link>
         </header>
-        
-        <main className="flex-1 min-h-0 w-full bg-white rounded-3xl shadow-xl overflow-hidden relative">
+
+        <main
+          className={`flex-1 min-h-0 w-full bg-white rounded-3xl shadow-xl overflow-hidden relative ${
+            selectedImage ? 'pointer-events-none' : ''
+          }`}
+        >
           <MapView murales={murales} onImageClick={setSelectedImage} />
         </main>
       </div>
