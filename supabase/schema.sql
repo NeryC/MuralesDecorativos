@@ -125,3 +125,58 @@ CREATE POLICY "Imágenes son públicas"
 ALTER TABLE mural_modificaciones
   ADD COLUMN IF NOT EXISTS imagen_original_url TEXT,
   ADD COLUMN IF NOT EXISTS imagen_original_thumbnail_url TEXT;
+
+-- Tabla de auditoría para registrar todos los cambios administrativos
+CREATE TABLE auditoria (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Usuario que realizó la acción
+  usuario_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  usuario_email TEXT,
+  usuario_nombre TEXT,
+  
+  -- Tipo de acción
+  accion TEXT NOT NULL CHECK (accion IN (
+    'aprobar_mural',
+    'rechazar_mural',
+    'aprobar_modificacion',
+    'rechazar_modificacion',
+    'actualizar_estado'
+  )),
+  
+  -- Entidad afectada
+  entidad_tipo TEXT NOT NULL CHECK (entidad_tipo IN ('mural', 'modificacion')),
+  entidad_id UUID NOT NULL,
+  
+  -- Datos del cambio (JSON para flexibilidad)
+  datos_anteriores JSONB,
+  datos_nuevos JSONB,
+  
+  -- Comentario opcional
+  comentario TEXT,
+  
+  -- IP y user agent para trazabilidad
+  ip_address TEXT,
+  user_agent TEXT
+);
+
+CREATE INDEX idx_auditoria_usuario_id ON auditoria(usuario_id);
+CREATE INDEX idx_auditoria_entidad ON auditoria(entidad_tipo, entidad_id);
+CREATE INDEX idx_auditoria_created_at ON auditoria(created_at DESC);
+CREATE INDEX idx_auditoria_accion ON auditoria(accion);
+
+-- Habilitar RLS en auditoría
+ALTER TABLE auditoria ENABLE ROW LEVEL SECURITY;
+
+-- Política: Solo usuarios autenticados pueden leer auditoría
+CREATE POLICY "Usuarios autenticados pueden leer auditoría"
+  ON auditoria FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Política: Solo usuarios autenticados pueden insertar en auditoría
+CREATE POLICY "Usuarios autenticados pueden insertar auditoría"
+  ON auditoria FOR INSERT
+  TO authenticated
+  WITH CHECK (true);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { MURAL_ESTADOS } from '@/lib/constants';
+import { registrarAuditoria } from '@/lib/auditoria';
 
 /**
  * PATCH /api/admin/murales/[id]/modificaciones/[modId]
@@ -84,6 +85,22 @@ export async function PATCH(
           { status: 500 }
         );
       }
+
+      // Registrar en auditoría
+      await registrarAuditoria({
+        accion: 'rechazar_modificacion',
+        entidadTipo: 'modificacion',
+        entidadId: modId,
+        datosAnteriores: {
+          estado_solicitud: modificacion.estado_solicitud,
+          mural_id: modificacion.mural_id,
+        },
+        datosNuevos: {
+          estado_solicitud: 'rechazada',
+          procesado_at: updatedMod.procesado_at,
+        },
+        comentario: `Modificación rechazada para mural ${id}`,
+      });
 
       return NextResponse.json({ success: true, action: 'reject', data: updatedMod });
     }
@@ -202,6 +219,23 @@ export async function PATCH(
           );
         }
 
+        // Registrar en auditoría para el fallback también
+        await registrarAuditoria({
+          accion: 'aprobar_modificacion',
+          entidadTipo: 'modificacion',
+          entidadId: modId,
+          datosAnteriores: {
+            estado_solicitud: modificacion.estado_solicitud,
+            mural_id: modificacion.mural_id,
+            mural_estado: mural.estado,
+          },
+          datosNuevos: {
+            estado_solicitud: 'aprobada',
+            mural_estado: MURAL_ESTADOS.MODIFICADO_APROBADO,
+          },
+          comentario: `Modificación aprobada y aplicada al mural ${id} (fallback)`,
+        });
+
         return NextResponse.json({ success: true, action: 'approve' });
       }
 
@@ -238,6 +272,28 @@ export async function PATCH(
       // No hacemos return 500 para no romper el flujo principal;
       // simplemente lo registramos.
     }
+
+    // Registrar en auditoría
+    await registrarAuditoria({
+      accion: 'aprobar_modificacion',
+      entidadTipo: 'modificacion',
+      entidadId: modId,
+      datosAnteriores: {
+        estado_solicitud: modificacion.estado_solicitud,
+        mural_id: modificacion.mural_id,
+        mural_estado: mural.estado,
+        mural_imagen_url: mural.imagen_url,
+        mural_comentario: mural.comentario,
+      },
+      datosNuevos: {
+        estado_solicitud: 'aprobada',
+        procesado_at: updatedMod.procesado_at,
+        mural_estado: MURAL_ESTADOS.MODIFICADO_APROBADO,
+        mural_imagen_url: updateMuralData.imagen_url,
+        mural_comentario: updateMuralData.comentario,
+      },
+      comentario: `Modificación aprobada y aplicada al mural ${id}`,
+    });
 
     return NextResponse.json({ success: true, action: 'approve' });
   } catch (error) {

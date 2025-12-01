@@ -66,3 +66,26 @@ export interface Coordinates {
   lat: number;
   lng: number;
 }
+
+export type AccionAuditoria =
+  | 'aprobar_mural'
+  | 'rechazar_mural'
+  | 'aprobar_modificacion'
+  | 'rechazar_modificacion'
+  | 'actualizar_estado';
+
+export interface Auditoria {
+  id: string;
+  created_at: string;
+  usuario_id?: string | null;
+  usuario_email?: string | null;
+  usuario_nombre?: string | null;
+  accion: AccionAuditoria;
+  entidad_tipo: 'mural' | 'modificacion';
+  entidad_id: string;
+  datos_anteriores?: Record<string, unknown> | null;
+  datos_nuevos?: Record<string, unknown> | null;
+  comentario?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+}

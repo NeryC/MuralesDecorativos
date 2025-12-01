@@ -42,12 +42,40 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     });
 
-    // Red marker icon for modified murals (same shape as default, but red)
+    // Red marker icon for approved murals
     const redMarkerIcon = new L.Icon({
       iconRetinaUrl:
         'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
       iconUrl:
         'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+
+    // Green marker icon for modified_aprobado murals
+    const greenMarkerIcon = new L.Icon({
+      iconRetinaUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      iconUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+      shadowUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+
+    // Blue marker icon for highlighted murals
+    const blueMarkerIcon = new L.Icon({
+      iconRetinaUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+      iconUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
       shadowUrl:
         'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
       iconSize: [25, 41],
@@ -76,20 +104,6 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
       }
     });
 
-    // Icono especial para el mural resaltado (verde)
-    const highlightMarkerIcon = new L.Icon({
-      iconRetinaUrl:
-        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-      iconUrl:
-        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-      shadowUrl:
-        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-    });
-
     let highlightedMarker: L.Marker | null = null;
     let highlightedCoords: { lat: number; lng: number } | null = null;
 
@@ -99,7 +113,8 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
       if (!coords || !mapRef.current) return;
 
       const isHighlighted = highlightId === mural.id;
-      const isModified = mural.estado === 'modificado_aprobado';
+      const isModifiedAprobado = mural.estado === 'modificado_aprobado';
+      const isAprobado = mural.estado === 'aprobado';
       
       // Guardar coordenadas del mural resaltado
       if (isHighlighted && coords) {
@@ -117,7 +132,7 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
       
       let popupContent = `<div style="text-align:center;"><b>${mural.nombre}</b>`;
 
-      if (isModified && modAprobada) {
+      if (isModifiedAprobado && modAprobada) {
         popupContent += `<br><span style="color:red; font-weight:bold;">⚠️ REPORTE DE CAMBIO</span>`;
         popupContent += `<div style="display:flex; gap:5px; margin-top:5px;">`;
         
@@ -158,17 +173,22 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
       popupContent += `<br><a href="${mural.url_maps}" target="_blank" style="display:inline-block; margin-top:5px;">Ver en Google Maps</a>`;
       
       // Button to report removed (only if not already modified)
-      if (!isModified) {
+      if (!isModifiedAprobado) {
         popupContent += `<br><br><a href="/reportar?id=${mural.id}&name=${encodeURIComponent(mural.nombre)}" style="color: #d32f2f; font-size: 0.9em;">🚩 Reportar Eliminado/Modificado</a>`;
       }
       
       popupContent += `</div>`;
 
-      // Determinar qué icono usar
+      // Determinar qué icono usar según el estado
       let markerIcon = undefined;
       if (isHighlighted) {
-        markerIcon = highlightMarkerIcon;
-      } else if (isModified) {
+        // Highlight: azul
+        markerIcon = blueMarkerIcon;
+      } else if (isModifiedAprobado) {
+        // Modificado aprobado: verde
+        markerIcon = greenMarkerIcon;
+      } else if (isAprobado) {
+        // Aprobado: rojo
         markerIcon = redMarkerIcon;
       }
 

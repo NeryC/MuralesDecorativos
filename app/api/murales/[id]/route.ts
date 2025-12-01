@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { registrarAuditoria } from '@/lib/auditoria';
 
 /**
  * GET /api/murales/[id]
@@ -54,6 +55,13 @@ export async function PATCH(
 
     const supabase = await createClient();
 
+    // Obtener el estado anterior para auditoría
+    const { data: muralAnterior } = await supabase
+      .from('murales')
+      .select('estado, nombre')
+      .eq('id', id)
+      .single();
+
     const { data, error } = await supabase
       .from('murales')
       .update({ estado })
@@ -68,6 +76,21 @@ export async function PATCH(
 
     if (!data) {
       return NextResponse.json({ error: 'Mural no encontrado' }, { status: 404 });
+    }
+
+    // Registrar en auditoría (intentará obtener el usuario si está autenticado)
+    const referer = request.headers.get('referer');
+    const isAdminRequest = referer?.includes('/admin');
+    if (isAdminRequest) {
+      const accion = estado === 'aprobado' ? 'aprobar_mural' : estado === 'rechazado' ? 'rechazar_mural' : 'actualizar_estado';
+      await registrarAuditoria({
+        accion,
+        entidadTipo: 'mural',
+        entidadId: id,
+        datosAnteriores: muralAnterior ? { estado: muralAnterior.estado } : undefined,
+        datosNuevos: { estado },
+        comentario: `Estado del mural "${muralAnterior?.nombre || id}" actualizado a ${estado}`,
+      });
     }
 
     return NextResponse.json({ success: true, data });

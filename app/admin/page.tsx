@@ -1,26 +1,50 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageShell } from '@/components/page-shell';
 import { FilterButtons } from '@/components/admin/filter-buttons';
 import { MuralRow } from '@/components/admin/mural-row';
 import ImageModal from '@/components/image-modal';
 import { useMuralHelpers } from '@/hooks/use-mural-helpers';
+import { getClientUser, type AuthUser } from '@/lib/auth/client';
+import { createClient } from '@/lib/supabase/client';
 import type { MuralWithModificaciones } from '@/lib/types';
 
 export default function AdminPage() {
   const [murales, setMurales] = useState<MuralWithModificaciones[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'modificado_pendiente'>('pendiente');
   const [processingModificacion, setProcessingModificacion] = useState<string | null>(null);
   const [updatingEstado, setUpdatingEstado] = useState<string | null>(null);
+  const router = useRouter();
 
   const { getUltimaModificacionPendiente, getImagenAmostrar } = useMuralHelpers(filter);
 
   useEffect(() => {
-    fetchMurales();
+    checkAuth();
   }, []);
+
+  const checkAuth = useCallback(async () => {
+    const currentUser = await getClientUser();
+    if (!currentUser) {
+      router.push('/admin/login');
+      return;
+    }
+    setUser(currentUser);
+    setAuthLoading(false);
+    fetchMurales();
+  }, [router]);
+
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  }, [router]);
 
   const fetchMurales = useCallback(async () => {
     try {
@@ -137,7 +161,7 @@ export default function AdminPage() {
     [murales]
   );
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <div className="spinner"></div>
@@ -146,9 +170,35 @@ export default function AdminPage() {
     );
   }
 
+  if (!user) {
+    return null; // Se redirigirá al login
+  }
+
   return (
     <PageShell title="Panel de Administración" scrollableMain>
       <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <p className="text-sm text-gray-600">
+              Conectado como: <span className="font-semibold">{user.email}</span>
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <a
+              href="/admin/auditoria"
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+            >
+              Ver Historial
+            </a>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+
         <div>
           <FilterButtons
             filter={filter}
@@ -196,12 +246,6 @@ export default function AdminPage() {
           )}
         </div>
 
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-          <p className="text-sm text-yellow-800">
-            <strong>⚠️ Nota:</strong> Este panel NO tiene autenticación. Cualquiera con la URL puede aprobar/rechazar murales.
-            La autenticación se agregará en una fase posterior.
-          </p>
-        </div>
         <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
       </div>
     </PageShell>
