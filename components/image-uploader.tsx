@@ -30,21 +30,21 @@ export default function ImageUploader({ onUploadComplete, onUploadStart, onUploa
       setIsUploading(true);
       if (onUploadStart) onUploadStart();
 
-      // Compress original
-      const compressedOriginal = await compressImage(
-        file,
-        IMAGE_COMPRESSION.maxWidth,
-        IMAGE_COMPRESSION.maxHeight,
-        IMAGE_COMPRESSION.quality
-      );
-
-      // Compress thumbnail
-      const compressedThumbnail = await compressImage(
-        file,
-        IMAGE_COMPRESSION.thumbnailMaxWidth,
-        IMAGE_COMPRESSION.thumbnailMaxHeight,
-        IMAGE_COMPRESSION.thumbnailQuality
-      );
+      // Compress original and thumbnail in paralelo para mejorar rendimiento
+      const [compressedOriginal, compressedThumbnail] = await Promise.all([
+        compressImage(
+          file,
+          IMAGE_COMPRESSION.maxWidth,
+          IMAGE_COMPRESSION.maxHeight,
+          IMAGE_COMPRESSION.quality
+        ),
+        compressImage(
+          file,
+          IMAGE_COMPRESSION.thumbnailMaxWidth,
+          IMAGE_COMPRESSION.thumbnailMaxHeight,
+          IMAGE_COMPRESSION.thumbnailQuality
+        ),
+      ]);
 
       // Upload original
       const formDataOriginal = new FormData();
