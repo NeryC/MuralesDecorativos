@@ -10,11 +10,22 @@ import { MuralWithModificaciones } from '@/lib/types';
 interface MapViewProps {
   murales: MuralWithModificaciones[];
   onImageClick?: (imageUrl: string) => void;
+  highlightId?: string;
 }
 
-export default function MapView({ murales, onImageClick }: MapViewProps) {
+export default function MapView({ murales, onImageClick, highlightId }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [isClient, setIsClient] = useState(false);
+
+  // Debug: log highlightId
+  useEffect(() => {
+    if (highlightId) {
+      console.log('Highlight ID recibido:', highlightId);
+      console.log('Murales disponibles:', murales.length);
+      const foundMural = murales.find(m => m.id === highlightId);
+      console.log('Mural encontrado:', foundMural ? foundMural.nombre : 'NO ENCONTRADO');
+    }
+  }, [highlightId, murales]);
 
   useEffect(() => {
     setIsClient(true);
@@ -65,12 +76,35 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
       }
     });
 
+    // Icono especial para el mural resaltado (verde)
+    const highlightMarkerIcon = new L.Icon({
+      iconRetinaUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      iconUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+      shadowUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+
+    let highlightedMarker: L.Marker | null = null;
+    let highlightedCoords: { lat: number; lng: number } | null = null;
+
     // Add markers for each mural
     murales.forEach((mural) => {
       const coords = extractCoordinates(mural.url_maps);
       if (!coords || !mapRef.current) return;
 
+      const isHighlighted = highlightId === mural.id;
       const isModified = mural.estado === 'modificado_aprobado';
+      
+      // Guardar coordenadas del mural resaltado
+      if (isHighlighted && coords) {
+        highlightedCoords = { lat: coords.lat, lng: coords.lng };
+      }
       
       // Obtener la última modificación aprobada para mostrar antes/después
       const modAprobada = mural.mural_modificaciones
@@ -130,11 +164,52 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
       
       popupContent += `</div>`;
 
-      const markerOptions = isModified ? { icon: redMarkerIcon } : {};
-      L.marker([coords.lat, coords.lng], markerOptions)
+      // Determinar qué icono usar
+      let markerIcon = undefined;
+      if (isHighlighted) {
+        markerIcon = highlightMarkerIcon;
+      } else if (isModified) {
+        markerIcon = redMarkerIcon;
+      }
+
+      const markerOptions = markerIcon ? { icon: markerIcon } : {};
+      const marker = L.marker([coords.lat, coords.lng], markerOptions)
         .addTo(mapRef.current!)
         .bindPopup(popupContent);
+
+      // Si es el mural resaltado, guardar referencia
+      if (isHighlighted) {
+        highlightedMarker = marker;
+      }
     });
+
+    // Si hay un mural resaltado, centrar el mapa y abrir el popup
+    if (highlightedMarker && highlightedCoords && mapRef.current) {
+      const coords: { lat: number; lng: number } = highlightedCoords;
+      console.log('Resaltando mural en:', coords);
+      
+      // Esperar un poco para asegurar que el mapa esté listo
+      setTimeout(() => {
+        if (mapRef.current && highlightedMarker) {
+          // Usar flyTo para una animación suave
+          mapRef.current.flyTo([coords.lat, coords.lng], 16, {
+            animate: true,
+            duration: 1.0
+          });
+          
+          // Abrir el popup después de que el mapa se haya movido
+          setTimeout(() => {
+            if (highlightedMarker && mapRef.current) {
+              highlightedMarker.openPopup();
+              console.log('Popup abierto para mural resaltado');
+            }
+          }, 1200);
+        }
+      }, 100);
+    } else if (highlightId && !highlightedMarker) {
+      console.warn('Highlight ID proporcionado pero no se encontró el mural:', highlightId);
+      console.warn('Murales disponibles:', murales.map(m => ({ id: m.id, nombre: m.nombre })));
+    }
 
     // Expose function to global scope for popup clicks
     if (typeof window !== 'undefined') {
@@ -151,7 +226,7 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
         mapRef.current = null;
       }
     };
-  }, [isClient, murales, onImageClick]);
+  }, [isClient, murales, onImageClick, highlightId]);
 
   if (!isClient) {
     return <div className="h-screen bg-gray-100 flex items-center justify-center">Cargando mapa...</div>;

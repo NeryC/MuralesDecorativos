@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/estado-badge';
 import { formatDate } from '@/lib/utils';
@@ -39,7 +40,20 @@ export const MuralRow = memo(function MuralRow({
 
   return (
     <tr className="hover:bg-gray-50">
-      <td className="px-4 py-3 text-sm">{mural.nombre}</td>
+      <td className="px-4 py-3 text-sm">
+        <div className="flex items-center gap-2">
+          <span>{mural.nombre}</span>
+          <Link
+            href={`/?highlight=${mural.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 text-xs underline"
+            title="Ver ubicación en el mapa"
+          >
+            🗺️ Ver en mapa
+          </Link>
+        </div>
+      </td>
       <td className="px-4 py-3 text-sm">{mural.candidato || '-'}</td>
       <td className="px-4 py-3 align-top">
         <div className="flex gap-2 mb-2">
