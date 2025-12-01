@@ -31,12 +31,18 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     });
 
-    // Red X icon for modified murals
-    const redXIcon = L.divIcon({
-      html: '<div style="font-size: 24px; color: red; font-weight: bold; text-shadow: 1px 1px 2px white;">❌</div>',
-      className: 'custom-div-icon',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
+    // Red marker icon for modified murals (same shape as default, but red)
+    const redMarkerIcon = new L.Icon({
+      iconRetinaUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      iconUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
     });
 
     // Initialize map
@@ -107,7 +113,7 @@ export default function MapView({ murales, onImageClick }: MapViewProps) {
       
       popupContent += `</div>`;
 
-      const markerOptions = isModified ? { icon: redXIcon } : {};
+      const markerOptions = isModified ? { icon: redMarkerIcon } : {};
       L.marker([coords.lat, coords.lng], markerOptions)
         .addTo(mapRef.current!)
         .bindPopup(popupContent);
