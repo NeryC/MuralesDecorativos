@@ -36,16 +36,56 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_murales_updated_at BEFORE UPDATE ON murales
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Tabla de solicitudes de modificación de murales
+CREATE TABLE mural_modificaciones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  mural_id UUID NOT NULL REFERENCES murales(id) ON DELETE CASCADE,
+  
+  -- Datos propuestos en la modificación
+  nuevo_comentario TEXT,
+  nueva_imagen_url TEXT NOT NULL,
+  nueva_imagen_thumbnail_url TEXT,
+  
+  -- Estado de la solicitud de modificación
+  estado_solicitud TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado_solicitud IN ('pendiente', 'aprobada', 'rechazada')),
+  procesado_at TIMESTAMP WITH TIME ZONE,
+  
+  -- Metadata
+  reportado_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_mural_modificaciones_mural_id ON mural_modificaciones(mural_id);
+CREATE INDEX idx_mural_modificaciones_estado ON mural_modificaciones(estado_solicitud);
+
 ALTER TABLE murales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mural_modificaciones ENABLE ROW LEVEL SECURITY;
 
 -- Política: Cualquiera puede leer murales (incluye pendientes para panel admin)
 CREATE POLICY "Murales aprobados son públicos"
   ON murales FOR SELECT
   USING (estado IN ('pendiente', 'aprobado', 'rechazado', 'modificado_pendiente', 'modificado_aprobado'));
 
+-- Política: Cualquiera puede leer solicitudes de modificación asociadas a murales visibles
+CREATE POLICY "Solicitudes de modificación son públicas"
+  ON mural_modificaciones FOR SELECT
+  USING (EXISTS (
+    SELECT 1
+    FROM murales m
+    WHERE m.id = mural_modificaciones.mural_id
+      AND m.estado IN ('pendiente', 'aprobado', 'rechazado', 'modificado_pendiente', 'modificado_aprobado')
+  ));
+
 -- Política: Cualquiera puede insertar nuevos murales (quedan pendientes)
 CREATE POLICY "Cualquiera puede crear murales"
   ON murales FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+-- Política: Cualquiera puede crear solicitudes de modificación
+CREATE POLICY "Cualquiera puede crear solicitudes de modificación"
+  ON mural_modificaciones FOR INSERT
   TO anon, authenticated
   WITH CHECK (true);
 

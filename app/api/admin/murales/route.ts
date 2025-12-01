@@ -3,15 +3,16 @@ import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/admin/murales
- * Obtiene TODOS los murales para el panel de administración
+ * Obtiene TODOS los murales para el panel de administración,
+ * incluyendo sus solicitudes de modificación (mural_modificaciones).
  */
 export async function GET() {
   try {
     const supabase = await createClient();
-    
+
     const { data, error } = await supabase
       .from('murales')
-      .select('*')
+      .select('*, mural_modificaciones(*)')
       .order('created_at', { ascending: false });
 
     if (error) {

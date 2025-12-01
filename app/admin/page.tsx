@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Mural } from '@/lib/types';
+import { MuralModificacion, MuralWithModificaciones } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import ImageModal from '@/components/image-modal';
 import { MURAL_ESTADOS } from '@/lib/constants';
 
 export default function AdminPage() {
-  const [murales, setMurales] = useState<Mural[]>([]);
+  const [murales, setMurales] = useState<MuralWithModificaciones[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'modificado_pendiente'>('pendiente');
@@ -26,6 +26,33 @@ export default function AdminPage() {
       console.error('Error fetching murales:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleProcesarModificacion(
+    muralId: string,
+    modificacionId: string,
+    action: 'approve' | 'reject'
+  ) {
+    try {
+      const response = await fetch(
+        `/api/admin/murales/${muralId}/modificaciones/${modificacionId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        }
+      );
+
+      if (response.ok) {
+        fetchMurales();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.error || 'Error al procesar la solicitud de modificación');
+      }
+    } catch (error) {
+      console.error('Error processing modification:', error);
+      alert('Error al procesar la solicitud de modificación');
     }
   }
 
@@ -51,11 +78,32 @@ export default function AdminPage() {
 
   const filteredMurales = murales.filter((mural) => {
     if (filter === 'all') return true;
-    return mural.estado === filter;
+    if (filter === 'pendiente') return mural.estado === 'pendiente';
+
+    // modificado_pendiente => murales que tienen al menos una solicitud pendiente
+    if (filter === 'modificado_pendiente') {
+      return mural.mural_modificaciones?.some(
+        (mod) => mod.estado_solicitud === 'pendiente'
+      );
+    }
+
+    return true;
   });
 
   const pendienteCount = murales.filter((m) => m.estado === 'pendiente').length;
-  const modificadoPendienteCount = murales.filter((m) => m.estado === 'modificado_pendiente').length;
+  const modificadoPendienteCount = murales.filter((m) =>
+    m.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente')
+  ).length;
+
+  function getUltimaModificacionPendiente(mural: MuralWithModificaciones): MuralModificacion | undefined {
+    return mural.mural_modificaciones
+      ?.filter((mod) => mod.estado_solicitud === 'pendiente')
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
+      )[0];
+  }
 
   if (loading) {
     return (
@@ -116,7 +164,7 @@ export default function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Comentario</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Acciones</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Acciones / Solicitudes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -124,8 +172,8 @@ export default function AdminPage() {
                     <tr key={mural.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm">{mural.nombre}</td>
                       <td className="px-4 py-3 text-sm">{mural.candidato || '-'}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex gap-2 mb-2">
                           {(mural.imagen_thumbnail_url || mural.imagen_url) && (
                             <img
                               src={mural.imagen_thumbnail_url || mural.imagen_url}
@@ -134,25 +182,28 @@ export default function AdminPage() {
                               onClick={() => setSelectedImage(mural.imagen_url)}
                             />
                           )}
-                          {(mural.estado === 'modificado_pendiente' ||
-                            mural.estado === 'modificado_aprobado') &&
-                            mural.nueva_imagen_url && (
+                          {getUltimaModificacionPendiente(mural)?.nueva_imagen_url && (
                             <img
-                              src={mural.nueva_imagen_thumbnail_url || mural.nueva_imagen_url}
+                              src={
+                                getUltimaModificacionPendiente(mural)?.nueva_imagen_thumbnail_url ||
+                                getUltimaModificacionPendiente(mural)?.nueva_imagen_url
+                              }
                               alt="Nueva"
                               className="w-16 h-16 object-cover rounded cursor-pointer border-2 border-red-500"
-                              onClick={() => setSelectedImage(mural.nueva_imagen_url || '')}
+                              onClick={() =>
+                                setSelectedImage(
+                                  getUltimaModificacionPendiente(mural)?.nueva_imagen_url || ''
+                                )
+                              }
                             />
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm max-w-xs">
                         <div className="truncate">{mural.comentario || '-'}</div>
-                        {(mural.estado === 'modificado_pendiente' ||
-                          mural.estado === 'modificado_aprobado') &&
-                          mural.nuevo_comentario && (
+                        {getUltimaModificacionPendiente(mural)?.nuevo_comentario && (
                           <div className="truncate text-red-600 mt-1">
-                            Nuevo: {mural.nuevo_comentario}
+                            Nuevo: {getUltimaModificacionPendiente(mural)?.nuevo_comentario}
                           </div>
                         )}
                       </td>
@@ -196,24 +247,6 @@ export default function AdminPage() {
                               </Button>
                             </>
                           )}
-                          {mural.estado === 'modificado_pendiente' && (
-                            <>
-                              <Button
-                                variant="success"
-                                onClick={() => updateEstado(mural.id, MURAL_ESTADOS.MODIFICADO_APROBADO)}
-                                className="text-xs px-2 py-1"
-                              >
-                                ✓ Aprobar Cambio
-                              </Button>
-                              <Button
-                                variant="danger"
-                                onClick={() => updateEstado(mural.id, MURAL_ESTADOS.APROBADO)}
-                                className="text-xs px-2 py-1"
-                              >
-                                ✗ Rechazar Cambio
-                              </Button>
-                            </>
-                          )}
                           {(mural.estado === 'aprobado' || mural.estado === 'modificado_aprobado') && (
                             <Button
                               variant="danger"
@@ -233,6 +266,73 @@ export default function AdminPage() {
                             </Button>
                           )}
                         </div>
+
+                        {mural.mural_modificaciones && mural.mural_modificaciones.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {mural.mural_modificaciones.map((mod) => (
+                              <div
+                                key={mod.id}
+                                className="border rounded-md p-2 bg-gray-50"
+                              >
+                                <div className="flex items-start gap-2">
+                                  {mod.nueva_imagen_url && (
+                                    <img
+                                      src={mod.nueva_imagen_thumbnail_url || mod.nueva_imagen_url}
+                                      alt="Propuesta"
+                                      className="w-12 h-12 object-cover rounded cursor-pointer border border-gray-300"
+                                      onClick={() =>
+                                        setSelectedImage(mod.nueva_imagen_url || '')
+                                      }
+                                    />
+                                  )}
+                                  <div className="flex-1">
+                                    <div className="text-xs text-gray-600">
+                                      {new Date(mod.created_at).toLocaleString('es-PY')}
+                                    </div>
+                                    {mod.nuevo_comentario && (
+                                      <div className="text-xs text-gray-800 mt-1 line-clamp-2">
+                                        {mod.nuevo_comentario}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`px-2 py-1 text-[10px] rounded-full ${
+                                      mod.estado_solicitud === 'pendiente'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : mod.estado_solicitud === 'aprobada'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }`}
+                                  >
+                                    {mod.estado_solicitud}
+                                  </span>
+                                </div>
+                                {mod.estado_solicitud === 'pendiente' && (
+                                  <div className="flex gap-2 mt-2">
+                                    <Button
+                                      variant="success"
+                                      onClick={() =>
+                                        handleProcesarModificacion(mural.id, mod.id, 'approve')
+                                      }
+                                      className="text-[10px] px-2 py-1"
+                                    >
+                                      ✓ Aprobar esta
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleProcesarModificacion(mural.id, mod.id, 'reject')
+                                      }
+                                      className="text-[10px] px-2 py-1"
+                                    >
+                                      ✗ Rechazar
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
