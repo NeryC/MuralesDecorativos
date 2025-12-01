@@ -105,6 +105,53 @@ export default function AdminPage() {
       )[0];
   }
 
+  function getUltimaModificacionAprobada(mural: MuralWithModificaciones): MuralModificacion | undefined {
+    return mural.mural_modificaciones
+      ?.filter((mod) => mod.estado_solicitud === 'aprobada')
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
+      )[0];
+  }
+
+  function getImagenAmostrar(mural: MuralWithModificaciones): { url: string; thumbnailUrl?: string | null; esAprobada: boolean } | null {
+    // Si el filtro es "all", mostrar solo la imagen aprobada si existe
+    if (filter === 'all') {
+      // Si el estado es modificado_aprobado, la imagen_url ya es la aprobada
+      if (mural.estado === 'modificado_aprobado' && mural.imagen_url) {
+        return {
+          url: mural.imagen_url,
+          thumbnailUrl: mural.imagen_thumbnail_url,
+          esAprobada: true,
+        };
+      }
+      
+      // Buscar modificación aprobada
+      const modAprobada = getUltimaModificacionAprobada(mural);
+      if (modAprobada?.nueva_imagen_url) {
+        return {
+          url: modAprobada.nueva_imagen_url,
+          thumbnailUrl: modAprobada.nueva_imagen_thumbnail_url,
+          esAprobada: true,
+        };
+      }
+      
+      // Si no hay modificación aprobada, mostrar la original
+      if (mural.imagen_url) {
+        return {
+          url: mural.imagen_url,
+          thumbnailUrl: mural.imagen_thumbnail_url,
+          esAprobada: false,
+        };
+      }
+      return null;
+    }
+
+    // Para otros filtros, retornar null para usar la lógica anterior
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -174,28 +221,53 @@ export default function AdminPage() {
                       <td className="px-4 py-3 text-sm">{mural.candidato || '-'}</td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex gap-2 mb-2">
-                          {(mural.imagen_thumbnail_url || mural.imagen_url) && (
-                            <img
-                              src={mural.imagen_thumbnail_url || mural.imagen_url}
-                              alt="Original"
-                              className="w-16 h-16 object-cover rounded cursor-pointer border-2 border-gray-300"
-                              onClick={() => setSelectedImage(mural.imagen_url)}
-                            />
-                          )}
-                          {getUltimaModificacionPendiente(mural)?.nueva_imagen_url && (
-                            <img
-                              src={
-                                getUltimaModificacionPendiente(mural)?.nueva_imagen_thumbnail_url ||
-                                getUltimaModificacionPendiente(mural)?.nueva_imagen_url
+                          {filter === 'all' ? (
+                            // En el filtro "all", mostrar solo la imagen aprobada si existe
+                            (() => {
+                              const imagenAmostrar = getImagenAmostrar(mural);
+                              if (imagenAmostrar) {
+                                return (
+                                  <img
+                                    src={imagenAmostrar.thumbnailUrl || imagenAmostrar.url}
+                                    alt={imagenAmostrar.esAprobada ? 'Aprobada' : 'Original'}
+                                    className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${
+                                      imagenAmostrar.esAprobada
+                                        ? 'border-green-500'
+                                        : 'border-gray-300'
+                                    }`}
+                                    onClick={() => setSelectedImage(imagenAmostrar.url)}
+                                  />
+                                );
                               }
-                              alt="Nueva"
-                              className="w-16 h-16 object-cover rounded cursor-pointer border-2 border-red-500"
-                              onClick={() =>
-                                setSelectedImage(
-                                  getUltimaModificacionPendiente(mural)?.nueva_imagen_url || ''
-                                )
-                              }
-                            />
+                              return null;
+                            })()
+                          ) : (
+                            // Para otros filtros, mantener el comportamiento original
+                            <>
+                              {(mural.imagen_thumbnail_url || mural.imagen_url) && (
+                                <img
+                                  src={mural.imagen_thumbnail_url || mural.imagen_url}
+                                  alt="Original"
+                                  className="w-16 h-16 object-cover rounded cursor-pointer border-2 border-gray-300"
+                                  onClick={() => setSelectedImage(mural.imagen_url)}
+                                />
+                              )}
+                              {getUltimaModificacionPendiente(mural)?.nueva_imagen_url && (
+                                <img
+                                  src={
+                                    getUltimaModificacionPendiente(mural)?.nueva_imagen_thumbnail_url ||
+                                    getUltimaModificacionPendiente(mural)?.nueva_imagen_url
+                                  }
+                                  alt="Nueva"
+                                  className="w-16 h-16 object-cover rounded cursor-pointer border-2 border-red-500"
+                                  onClick={() =>
+                                    setSelectedImage(
+                                      getUltimaModificacionPendiente(mural)?.nueva_imagen_url || ''
+                                    )
+                                  }
+                                />
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
