@@ -7,7 +7,8 @@ import { FilterButtons } from '@/components/admin/filter-buttons';
 import { MuralRow } from '@/components/admin/mural-row';
 import ImageModal from '@/components/image-modal';
 import { useMuralHelpers } from '@/hooks/use-mural-helpers';
-import { getClientUser, type AuthUser } from '@/lib/auth/client';
+import { getClientUser } from '@/lib/auth/client';
+import type { AuthUser } from '@/lib/auth/types';
 import { createClient } from '@/lib/supabase/client';
 import type { MuralWithModificaciones } from '@/lib/types';
 
