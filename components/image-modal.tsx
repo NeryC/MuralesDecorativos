@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import ReactModal from 'react-modal';
 
 interface ImageModalProps {
@@ -8,7 +8,7 @@ interface ImageModalProps {
   onClose: () => void;
 }
 
-export default function ImageModal({ imageUrl, onClose }: ImageModalProps) {
+function ImageModalComponent({ imageUrl, onClose }: ImageModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const isOpen = !!imageUrl;
 
@@ -19,15 +19,15 @@ export default function ImageModal({ imageUrl, onClose }: ImageModalProps) {
     }
   }, [imageUrl]);
 
+  const handleImageLoad = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
   if (!isOpen) return null;
-
-  const handleImageLoad = () => {
-    setIsLoading(false);
-  };
-
-  const handleImageError = () => {
-    setIsLoading(false);
-  };
 
   return (
     <ReactModal
@@ -67,3 +67,5 @@ export default function ImageModal({ imageUrl, onClose }: ImageModalProps) {
     </ReactModal>
   );
 }
+
+export default memo(ImageModalComponent);

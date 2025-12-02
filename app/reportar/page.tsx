@@ -10,8 +10,8 @@ import ImageModal from '@/components/image-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { compressImage, uploadImageWithThumbnail } from '@/lib/utils';
-import { IMAGE_COMPRESSION } from '@/lib/constants';
+import { useImageUpload } from '@/hooks/use-image-upload';
+import { MESSAGES } from '@/lib/messages';
 import type { ReportMuralDTO, Mural } from '@/lib/types';
 
 const INITIAL_FORM_DATA: ReportMuralDTO = {
@@ -27,7 +27,6 @@ function ReportarContent() {
 
   const [formData, setFormData] = useState<ReportMuralDTO>(INITIAL_FORM_DATA);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [mural, setMural] = useState<Mural | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -52,8 +51,12 @@ function ReportarContent() {
         window.location.href = '/';
       }, 3000);
     },
-    successMessage: '¡Reporte enviado con éxito! Gracias por tu colaboración.',
-    errorMessage: 'Error al enviar el reporte.',
+    successMessage: MESSAGES.SUCCESS.REPORTE_ENVIADO,
+    errorMessage: MESSAGES.ERROR.ENVIAR_REPORTE,
+  });
+
+  const { isUploading: isUploadingImage, uploadImage } = useImageUpload({
+    onError: (error) => setError(error),
   });
 
   const handleFileSelect = useCallback((file: File | null) => {
@@ -85,53 +88,26 @@ function ReportarContent() {
     e.preventDefault();
 
     if (!selectedFile) {
-      setError('Por favor selecciona una foto.');
+      setError(MESSAGES.VALIDATION.SELECCIONAR_FOTO_REPORTE);
       return;
     }
 
     if (!muralId) {
-      setError('ID de mural no válido.');
+      setError(MESSAGES.ERROR.ID_INVALIDO);
       return;
     }
 
-    try {
-      setIsUploadingImage(true);
-
-      // Compress original and thumbnail in parallel
-      const [compressedOriginal, compressedThumbnail] = await Promise.all([
-        compressImage(
-          selectedFile,
-          IMAGE_COMPRESSION.maxWidth,
-          IMAGE_COMPRESSION.maxHeight,
-          IMAGE_COMPRESSION.quality
-        ),
-        compressImage(
-          selectedFile,
-          IMAGE_COMPRESSION.thumbnailMaxWidth,
-          IMAGE_COMPRESSION.thumbnailMaxHeight,
-          IMAGE_COMPRESSION.thumbnailQuality
-        ),
-      ]);
-
-      // Convert Blobs to Files
-      const originalFile = new File([compressedOriginal], 'original.jpg', { type: 'image/jpeg' });
-      const thumbnailFile = new File([compressedThumbnail], 'thumbnail.jpg', { type: 'image/jpeg' });
-
-      // Upload images
-      const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
-
-      // Update form data with image URLs and submit
-      await submit({
-        ...formData,
-        nueva_imagen_url: originalUrl,
-        nueva_imagen_thumbnail_url: thumbnailUrl,
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setError(error instanceof Error ? error.message : 'Error al subir la imagen');
-    } finally {
-      setIsUploadingImage(false);
+    const imageUrls = await uploadImage(selectedFile);
+    if (!imageUrls) {
+      return; // Error already handled by useImageUpload
     }
+
+    // Update form data with image URLs and submit
+    await submit({
+      ...formData,
+      nueva_imagen_url: imageUrls.originalUrl,
+      nueva_imagen_thumbnail_url: imageUrls.thumbnailUrl,
+    });
   };
 
   if (!muralId) {
@@ -139,7 +115,7 @@ function ReportarContent() {
       <PageShell title="Reportar Mural" scrollableMain>
         <div className="max-w-2xl mx-auto">
           <p className="text-red-600 font-semibold">
-            Error: No se especificó ningún mural. Vuelve al mapa e intenta de nuevo.
+            Error: {MESSAGES.ERROR.ID_INVALIDO} Vuelve al mapa e intenta de nuevo.
           </p>
         </div>
       </PageShell>
@@ -189,7 +165,11 @@ function ReportarContent() {
         </FormField>
 
         <Button type="submit" variant="danger" disabled={isSubmitting || isUploadingImage} className="w-full">
-          {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
+          {isUploadingImage 
+            ? MESSAGES.LOADING.SUBIENDO_IMAGEN 
+            : isSubmitting 
+            ? MESSAGES.LOADING.ENVIANDO 
+            : MESSAGES.UI.ENVIAR_REPORTE}
         </Button>
 
         {status && (

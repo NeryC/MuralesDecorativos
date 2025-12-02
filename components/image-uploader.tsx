@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import ImageModal from '@/components/image-modal';
+import { MESSAGES } from '@/lib/messages';
+import { FILE_LIMITS } from '@/lib/ui-constants';
 
 interface ImageUploaderProps {
   onFileSelect: (file: File | null) => void;
@@ -31,19 +33,16 @@ export default function ImageUploader({ onFileSelect, onError, disabled, resetKe
 
     // Validar que sea una imagen
     if (!file.type.startsWith('image/')) {
-      const errorMsg = 'Por favor selecciona un archivo de imagen válido';
       if (onError) {
-        onError(errorMsg);
+        onError(MESSAGES.VALIDATION.ARCHIVO_INVALIDO);
       }
       return;
     }
 
     // Validar tamaño (máximo 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      const errorMsg = 'La imagen es demasiado grande. Máximo 10MB';
+    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE_BYTES) {
       if (onError) {
-        onError(errorMsg);
+        onError(MESSAGES.VALIDATION.ARCHIVO_MUY_GRANDE);
       }
       return;
     }

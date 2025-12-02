@@ -7,6 +7,9 @@ import { PageShell } from '@/components/page-shell';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/estado-badge';
 import ImageModal from '@/components/image-modal';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { StatusAlert } from '@/components/status-alert';
+import { MESSAGES } from '@/lib/messages';
 import { getClientUser } from '@/lib/auth/client';
 import { createClient } from '@/lib/supabase/client';
 import type { MuralWithModificaciones, MuralModificacion } from '@/lib/types';
@@ -19,6 +22,7 @@ export default function ModificacionesPage() {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [processingModificacion, setProcessingModificacion] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -83,11 +87,11 @@ export default function ModificacionesPage() {
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Error al procesar la solicitud de modificación');
+          setErrorMessage(errorData.error || MESSAGES.ERROR.PROCESAR_MODIFICACION);
         }
       } catch (error) {
         console.error('Error processing modification:', error);
-        alert('Error al procesar la solicitud de modificación');
+        setErrorMessage(MESSAGES.ERROR.PROCESAR_MODIFICACION);
       } finally {
         setProcessingModificacion(null);
       }
@@ -106,8 +110,7 @@ export default function ModificacionesPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="spinner"></div>
-        <p className="mt-4 font-bold">Cargando...</p>
+        <LoadingSpinner size="md" text="Cargando..." />
       </div>
     );
   }
@@ -116,40 +119,31 @@ export default function ModificacionesPage() {
     return null;
   }
 
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  }, [router]);
+
   return (
     <PageShell 
       title="Solicitudes de Modificación Pendientes" 
       scrollableMain
-      showMapButton={false}
-      rightActions={
-        <div className="flex gap-3">
-          <Link
-            href="/admin"
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
-          >
-            ← Volver
-          </Link>
-          <Link
-            href="/admin/auditoria"
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
-          >
-            Ver Historial
-          </Link>
-          <button
-            onClick={async () => {
-              const supabase = createClient();
-              await supabase.auth.signOut();
-              router.push('/admin/login');
-              router.refresh();
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-      }
+      showMapButton={true}
+      adminActions={{
+        onLogout: handleLogout,
+        showAuditoria: true,
+        showBackToPanel: true,
+        backToPanelHref: '/admin',
+      }}
     >
       <div className="max-w-6xl mx-auto">
+        {errorMessage && (
+          <StatusAlert type="error" onClose={() => setErrorMessage(null)}>
+            {errorMessage}
+          </StatusAlert>
+        )}
         {modificacionesPendientes.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No hay solicitudes de modificación pendientes.</p>

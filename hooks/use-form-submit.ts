@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { MESSAGES } from '@/lib/messages';
 
 interface SubmitStatus {
   type: 'success' | 'error';
@@ -28,8 +29,8 @@ export function useFormSubmit<T>({
   onSubmit,
   onSuccess,
   onError,
-  successMessage = 'Operación completada con éxito.',
-  errorMessage = 'Error al procesar la solicitud.',
+  successMessage = MESSAGES.SUCCESS.OPERACION_COMPLETADA,
+  errorMessage = MESSAGES.ERROR.PROCESAR_SOLICITUD,
 }: UseFormSubmitOptions<T>): UseFormSubmitReturn<T> {
   const [status, setStatus] = useState<SubmitStatus | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

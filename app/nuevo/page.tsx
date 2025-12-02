@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { compressImage, isValidGoogleMapsUrl, uploadImageWithThumbnail } from '@/lib/utils';
-import { IMAGE_COMPRESSION } from '@/lib/constants';
+import { useImageUpload } from '@/hooks/use-image-upload';
+import { isValidGoogleMapsUrl } from '@/lib/utils';
+import { MESSAGES } from '@/lib/messages';
 import type { CreateMuralDTO } from '@/lib/types';
 
 const INITIAL_FORM_DATA: CreateMuralDTO = {
@@ -26,7 +27,6 @@ const INITIAL_FORM_DATA: CreateMuralDTO = {
 export default function NewMuralPage() {
   const [formData, setFormData] = useState<CreateMuralDTO>(INITIAL_FORM_DATA);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
   const { status, isSubmitting, submit, setError } = useFormSubmit<CreateMuralDTO>({
@@ -42,8 +42,12 @@ export default function NewMuralPage() {
       setSelectedFile(null);
       setResetKey((prev) => prev + 1); // Reset map and image uploader
     },
-    successMessage: '¡Enviado! Tu mural está pendiente de aprobación.',
-    errorMessage: 'Error al enviar. Intenta de nuevo.',
+    successMessage: MESSAGES.SUCCESS.MURAL_ENVIADO,
+    errorMessage: MESSAGES.ERROR.ENVIAR_MURAL,
+  });
+
+  const { isUploading: isUploadingImage, uploadImage } = useImageUpload({
+    onError: (error) => setError(error),
   });
 
   const handleLocationSelect = useCallback(
@@ -62,53 +66,26 @@ export default function NewMuralPage() {
 
     // Validations
     if (!isValidGoogleMapsUrl(formData.url_maps)) {
-      setError('Por favor selecciona un punto en el mapa.');
+      setError(MESSAGES.VALIDATION.SELECCIONAR_MAPA);
       return;
     }
 
     if (!selectedFile) {
-      setError('Debes seleccionar una foto del mural.');
+      setError(MESSAGES.VALIDATION.SELECCIONAR_FOTO);
       return;
     }
 
-    try {
-      setIsUploadingImage(true);
-
-      // Compress original and thumbnail in parallel
-      const [compressedOriginal, compressedThumbnail] = await Promise.all([
-        compressImage(
-          selectedFile,
-          IMAGE_COMPRESSION.maxWidth,
-          IMAGE_COMPRESSION.maxHeight,
-          IMAGE_COMPRESSION.quality
-        ),
-        compressImage(
-          selectedFile,
-          IMAGE_COMPRESSION.thumbnailMaxWidth,
-          IMAGE_COMPRESSION.thumbnailMaxHeight,
-          IMAGE_COMPRESSION.thumbnailQuality
-        ),
-      ]);
-
-      // Convert Blobs to Files
-      const originalFile = new File([compressedOriginal], 'original.jpg', { type: 'image/jpeg' });
-      const thumbnailFile = new File([compressedThumbnail], 'thumbnail.jpg', { type: 'image/jpeg' });
-
-      // Upload images
-      const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
-
-      // Update form data with image URLs and submit
-      await submit({
-        ...formData,
-        imagen_url: originalUrl,
-        imagen_thumbnail_url: thumbnailUrl,
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setError(error instanceof Error ? error.message : 'Error al subir la imagen');
-    } finally {
-      setIsUploadingImage(false);
+    const imageUrls = await uploadImage(selectedFile);
+    if (!imageUrls) {
+      return; // Error already handled by useImageUpload
     }
+
+    // Update form data with image URLs and submit
+    await submit({
+      ...formData,
+      imagen_url: imageUrls.originalUrl,
+      imagen_thumbnail_url: imageUrls.thumbnailUrl,
+    });
   };
 
   return (
@@ -158,7 +135,11 @@ export default function NewMuralPage() {
 
         <div className="flex flex-col gap-2 mt-1 flex-shrink-0">
           <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full" size="lg">
-            {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar'}
+            {isUploadingImage 
+              ? MESSAGES.LOADING.SUBIENDO_IMAGEN 
+              : isSubmitting 
+              ? MESSAGES.LOADING.ENVIANDO 
+              : MESSAGES.UI.ENVIAR}
           </Button>
 
           {status && (

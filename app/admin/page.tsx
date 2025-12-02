@@ -6,7 +6,11 @@ import { PageShell } from '@/components/page-shell';
 import { FilterButtons } from '@/components/admin/filter-buttons';
 import { MuralRow } from '@/components/admin/mural-row';
 import ImageModal from '@/components/image-modal';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { StatusAlert } from '@/components/status-alert';
+import { MESSAGES } from '@/lib/messages';
 import { useMuralHelpers } from '@/hooks/use-mural-helpers';
+import { useMuralFilters, type FilterType } from '@/hooks/use-mural-filters';
 import { getClientUser } from '@/lib/auth/client';
 import type { AuthUser } from '@/lib/auth/types';
 import { createClient } from '@/lib/supabase/client';
@@ -18,34 +22,21 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pendiente' | 'modificado_pendiente'>('pendiente');
+  const [filter, setFilter] = useState<FilterType>('pendiente');
+
+  const handleImageClick = useCallback((url: string) => {
+    setSelectedImage(url);
+  }, []);
+
+  const handleCloseImage = useCallback(() => {
+    setSelectedImage(null);
+  }, []);
   const [processingModificacion, setProcessingModificacion] = useState<string | null>(null);
   const [updatingEstado, setUpdatingEstado] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
   const { getUltimaModificacionPendiente, getImagenAmostrar } = useMuralHelpers(filter);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = useCallback(async () => {
-    const currentUser = await getClientUser();
-    if (!currentUser) {
-      router.push('/admin/login');
-      return;
-    }
-    setUser(currentUser);
-    setAuthLoading(false);
-    fetchMurales();
-  }, [router]);
-
-  const handleLogout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/admin/login');
-    router.refresh();
-  }, [router]);
 
   const fetchMurales = useCallback(async () => {
     try {
@@ -63,6 +54,29 @@ export default function AdminPage() {
       setLoading(false);
     }
   }, []);
+
+  const checkAuth = useCallback(async () => {
+    const currentUser = await getClientUser();
+    if (!currentUser) {
+      router.push('/admin/login');
+      return;
+    }
+    setUser(currentUser);
+    setAuthLoading(false);
+    fetchMurales();
+  }, [router, fetchMurales]);
+
+  useEffect(() => {
+    checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
+
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  }, [router]);
 
   const handleProcesarModificacion = useCallback(
     async (muralId: string, modificacionId: string, action: 'approve' | 'reject') => {
@@ -90,11 +104,11 @@ export default function AdminPage() {
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Error al procesar la solicitud de modificación');
+          setErrorMessage(errorData.error || MESSAGES.ERROR.PROCESAR_MODIFICACION);
         }
       } catch (error) {
         console.error('Error processing modification:', error);
-        alert('Error al procesar la solicitud de modificación');
+        setErrorMessage(MESSAGES.ERROR.PROCESAR_MODIFICACION);
       } finally {
         setProcessingModificacion(null);
       }
@@ -115,11 +129,11 @@ export default function AdminPage() {
         if (response.ok) {
           await fetchMurales();
         } else {
-          alert('Error al actualizar el estado');
+          setErrorMessage(MESSAGES.ERROR.ACTUALIZAR_ESTADO);
         }
       } catch (error) {
         console.error('Error updating estado:', error);
-        alert('Error al actualizar el estado');
+        setErrorMessage(MESSAGES.ERROR.ACTUALIZAR_ESTADO);
       } finally {
         setUpdatingEstado(null);
       }
@@ -127,46 +141,12 @@ export default function AdminPage() {
     [fetchMurales]
   );
 
-  const filteredMurales = useMemo(
-    () => {
-      if (!Array.isArray(murales)) return [];
-      return murales.filter((mural) => {
-        if (filter === 'all') return true;
-        if (filter === 'pendiente') return mural.estado === 'pendiente';
-        if (filter === 'modificado_pendiente') {
-          return mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente');
-        }
-        return true;
-      });
-    },
-    [murales, filter]
-  );
-
-  const counts = useMemo(
-    () => {
-      if (!Array.isArray(murales)) {
-        return {
-          pendiente: 0,
-          modificadoPendiente: 0,
-          total: 0,
-        };
-      }
-      return {
-        pendiente: murales.filter((mural) => mural.estado === 'pendiente').length,
-        modificadoPendiente: murales.filter((mural) =>
-          mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente')
-        ).length,
-        total: murales.length,
-      };
-    },
-    [murales]
-  );
+  const { filteredMurales, counts } = useMuralFilters(murales, filter);
 
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="spinner"></div>
-        <p className="mt-4 font-bold">Cargando...</p>
+        <LoadingSpinner size="md" text="Cargando..." />
       </div>
     );
   }
@@ -179,25 +159,19 @@ export default function AdminPage() {
     <PageShell 
       title="Panel de Administración" 
       scrollableMain
-      showMapButton={false}
-      rightActions={
-        <div className="flex gap-3">
-          <a
-            href="/admin/auditoria"
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
-          >
-            Ver Historial
-          </a>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-      }
+      showMapButton={true}
+      adminActions={{
+        onLogout: handleLogout,
+        showAuditoria: true,
+        showBackToPanel: false,
+      }}
     >
       <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+        {errorMessage && (
+          <StatusAlert type="error" onClose={() => setErrorMessage(null)}>
+            {errorMessage}
+          </StatusAlert>
+        )}
         <div>
           <FilterButtons
             filter={filter}
@@ -230,7 +204,7 @@ export default function AdminPage() {
                       key={mural.id}
                       mural={mural}
                       filter={filter}
-                      onImageClick={setSelectedImage}
+                      onImageClick={handleImageClick}
                       onUpdateEstado={updateEstado}
                       onProcesarModificacion={handleProcesarModificacion}
                       getUltimaModificacionPendiente={getUltimaModificacionPendiente}
@@ -246,7 +220,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
+        <ImageModal imageUrl={selectedImage} onClose={handleCloseImage} />
       </div>
     </PageShell>
   );

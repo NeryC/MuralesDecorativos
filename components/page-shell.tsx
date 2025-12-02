@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { StatsGrid } from '@/components/stats-grid';
+import { AdminActions } from '@/components/admin/admin-actions';
 
 interface PageShellProps {
   title: string;
@@ -14,6 +16,12 @@ interface PageShellProps {
   showMapButton?: boolean;
   subtitle?: string;
   stats?: Array<{ label: string; value: string | number; color?: string }>;
+  adminActions?: {
+    onLogout: () => void;
+    showAuditoria?: boolean;
+    showBackToPanel?: boolean;
+    backToPanelHref?: string;
+  };
 }
 
 export function PageShell({
@@ -25,24 +33,25 @@ export function PageShell({
   showMapButton = true,
   subtitle,
   stats,
+  adminActions,
 }: PageShellProps) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
 
+  // Si hay adminActions, usarlas; de lo contrario, usar rightActions personalizados
+  const finalRightActions = adminActions ? (
+    <AdminActions {...adminActions} />
+  ) : rightActions;
+
   return (
     <div 
-      className="h-screen flex flex-col items-center justify-center relative overflow-hidden w-full"
+      className="h-screen flex flex-col items-center justify-center relative overflow-hidden w-full bg-[#F8FAFC] max-w-screen overflow-y-hidden"
       style={{
-        background: '#F8FAFC',
         paddingLeft: 'clamp(1rem, 3vw, 3rem)',
         paddingRight: 'clamp(1rem, 3vw, 3rem)',
-        maxWidth: '100vw',
-        height: '100vh',
-        overflowY: 'hidden',
       }}
     >
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto py-4 md:py-5 lg:py-6" style={{ width: '100%', maxWidth: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div className="relative z-10 w-full max-w-7xl mx-auto py-4 md:py-5 lg:py-6 h-full flex flex-col">
         <div
           className={`w-full flex flex-col gap-4 md:gap-5 ${
             fullHeight ? 'h-full' : ''
@@ -64,60 +73,28 @@ export function PageShell({
                     )}
                   </div>
                   <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
-                {!isHomePage && (
+                {!isHomePage && showMapButton && (
                   <Link
                     href="/"
-                    className="px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                    style={{
-                      background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                      color: 'white',
-                    }}
+                    className="px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-white bg-gradient-to-br from-blue-500 to-blue-600"
                   >
                     🗺️ Ver Mapa
                   </Link>
                 )}
-                    {rightActions}
+                    {finalRightActions}
                   </div>
                 </div>
-                {stats && stats.length > 0 && (
-                  <div className="flex flex-wrap gap-4 justify-center w-full">
-                    {stats.map((stat, index) => (
-                      <Card
-                        key={index}
-                        className="flex flex-col px-4 py-3 min-w-[120px]"
-                        style={{
-                          borderLeftWidth: '4px',
-                          borderLeftColor: stat.color || '#3B82F6',
-                        }}
-                      >
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                          {stat.label}
-                        </span>
-                        <span 
-                          className="text-xl md:text-2xl font-bold"
-                          style={{ color: stat.color || '#3B82F6' }}
-                        >
-                          {stat.value}
-                        </span>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                {stats && stats.length > 0 && <StatsGrid stats={stats} />}
               </div>
             </CardHeader>
           </Card>
 
           {/* Main content con Tailwind Plus UI Blocks */}
           <Card className={`flex-1 w-full ${
-            scrollableMain ? 'overflow-auto' : 'overflow-hidden flex flex-col'
-          }`}
-          style={!scrollableMain ? { 
-            display: 'flex',
-            flexDirection: 'column',
-            flex: '1 1 0%',
-            minHeight: 0,
-          } : {}}
-          >
+            scrollableMain 
+              ? 'overflow-auto' 
+              : 'overflow-hidden flex flex-col min-h-0'
+          }`}>
             <CardContent className={scrollableMain ? 'p-6 md:p-8 lg:p-10' : 'p-0 h-full'}>
               {children}
             </CardContent>

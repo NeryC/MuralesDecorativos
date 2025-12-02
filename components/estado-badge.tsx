@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { MuralEstado } from '@/lib/types';
 
@@ -18,7 +19,7 @@ const ESTADO_STYLES: Record<string, string> = {
   rechazada: 'bg-red-100 text-red-800',
 };
 
-export function EstadoBadge({ estado, className }: EstadoBadgeProps) {
+function EstadoBadgeComponent({ estado, className }: EstadoBadgeProps) {
   return (
     <span
       className={cn(
@@ -31,4 +32,6 @@ export function EstadoBadge({ estado, className }: EstadoBadgeProps) {
     </span>
   );
 }
+
+export const EstadoBadge = memo(EstadoBadgeComponent);
 

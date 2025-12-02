@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from '@/components/page-shell';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { getClientUser } from '@/lib/auth/client';
 import { createClient } from '@/lib/supabase/client';
 import type { Auditoria } from '@/lib/types';
@@ -77,8 +78,7 @@ export default function AuditoriaPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="spinner"></div>
-        <p className="mt-4 font-bold">Cargando...</p>
+        <LoadingSpinner size="md" text="Cargando..." />
       </div>
     );
   }
@@ -88,30 +88,19 @@ export default function AuditoriaPage() {
   }
 
   return (
-    <PageShell title="Historial de Cambios" scrollableMain>
+    <PageShell 
+      title="Historial de Cambios" 
+      subtitle="Registro de todas las acciones realizadas en el sistema"
+      scrollableMain
+      showMapButton={true}
+      adminActions={{
+        onLogout: handleLogout,
+        showAuditoria: false,
+        showBackToPanel: true,
+        backToPanelHref: '/admin',
+      }}
+    >
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Historial de Cambios</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Registro de todas las acciones realizadas en el sistema
-            </p>
-          </div>
-          <div className="flex gap-3 items-center">
-            <a
-              href="/admin"
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
-            >
-              Volver al Panel
-            </a>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
 
         {auditoria.length === 0 ? (
           <p className="text-center text-gray-500 py-8">No hay registros de auditoría.</p>

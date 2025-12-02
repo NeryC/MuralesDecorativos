@@ -1,74 +1,40 @@
 'use client';
 
-import { useEffect, useState, Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import ImageModal from '@/components/image-modal';
 import { PageShell } from '@/components/page-shell';
-import { MuralWithModificaciones } from '@/lib/types';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { StatsGrid } from '@/components/stats-grid';
+import { useMuralData } from '@/hooks/use-mural-data';
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import('@/components/map-view'), {
   ssr: false,
   loading: () => (
-      <div 
-        className="h-full w-full flex flex-col items-center justify-center"
-        style={{
-          background: '#F8FAFC',
-        }}
-      >
-      <div className="spinner"></div>
-      <p className="mt-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-        Cargando mapa...
-      </p>
-    </div>
+    <LoadingSpinner 
+      fullScreen 
+      size="lg" 
+      text="Cargando mapa..." 
+    />
   ),
 });
 
 function HomePageContent() {
   const searchParams = useSearchParams();
   const highlightId = searchParams.get('highlight');
-  const [murales, setMurales] = useState<MuralWithModificaciones[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { murales, loading } = useMuralData({ highlightId });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchMurales() {
-      try {
-        const response = await fetch('/api/murales');
-        const data = await response.json();
-        let muralesList = Array.isArray(data) ? data : [];
+  const handleImageClick = useCallback((url: string) => {
+    setSelectedImage(url);
+  }, []);
 
-        // Si hay un highlightId, obtener ese mural específico aunque esté pendiente
-        if (highlightId) {
-          try {
-            const highlightResponse = await fetch(`/api/murales/${highlightId}`);
-            if (highlightResponse.ok) {
-              const highlightMural = await highlightResponse.json();
-              // Verificar si el mural ya está en la lista
-              const exists = muralesList.some(m => m.id === highlightId);
-              if (!exists) {
-                // Agregar el mural resaltado a la lista
-                muralesList = [highlightMural, ...muralesList];
-                console.log('Mural resaltado agregado temporalmente:', highlightMural.nombre);
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching highlighted mural:', error);
-          }
-        }
-
-        setMurales(muralesList);
-      } catch (error) {
-        console.error('Error fetching murales:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchMurales();
-  }, [highlightId]);
+  const handleCloseImage = useCallback(() => {
+    setSelectedImage(null);
+  }, []);
 
   // Calcular estadísticas
   const stats = useMemo(() => {
@@ -84,26 +50,14 @@ function HomePageContent() {
   }, [murales]);
 
   if (loading) {
-    return (
-      <div 
-        className="h-screen flex flex-col items-center justify-center"
-        style={{
-          background: '#F8FAFC',
-        }}
-      >
-        <div className="spinner"></div>
-        <p className="mt-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Cargando puntos...
-        </p>
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" text="Cargando puntos..." />;
   }
 
   return (
     <>
       <PageShell
-        title="Mapa de Murales Decorativos"
-        subtitle="Explora y descubre el arte urbano de nuestra ciudad"
+        title="Murales de Propaganda"
+        subtitle="Todos los murales de propaganda del País"
         fullHeight
         scrollableMain={false}
         showMapButton={false}
@@ -129,30 +83,18 @@ function HomePageContent() {
               maxWidth: '100%',
             }}
           >
-            <MapView murales={murales} onImageClick={setSelectedImage} highlightId={highlightId || undefined} />
+            <MapView murales={murales} onImageClick={handleImageClick} highlightId={highlightId || undefined} />
           </div>
         </div>
       </PageShell>
-      <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
+      <ImageModal imageUrl={selectedImage} onClose={handleCloseImage} />
     </>
   );
 }
 
 export default function HomePage() {
   return (
-    <Suspense fallback={
-      <div 
-        className="h-screen flex flex-col items-center justify-center"
-        style={{
-          background: '#F8FAFC',
-        }}
-      >
-        <div className="spinner"></div>
-        <p className="mt-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Cargando mapa...
-        </p>
-      </div>
-    }>
+    <Suspense fallback={<LoadingSpinner fullScreen size="lg" text="Cargando mapa..." />}>
       <HomePageContent />
     </Suspense>
   );
