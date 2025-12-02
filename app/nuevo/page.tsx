@@ -5,12 +5,10 @@ import { PageShell } from '@/components/page-shell';
 import { StatusAlert } from '@/components/status-alert';
 import { FormField } from '@/components/form-field';
 import { MapField } from '@/components/map-field';
-import { CaptchaField } from '@/components/captcha-field';
 import ImageUploader from '@/components/image-uploader';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useCaptcha } from '@/hooks/use-captcha';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { compressImage, isValidGoogleMapsUrl, uploadImageWithThumbnail } from '@/lib/utils';
 import { IMAGE_COMPRESSION } from '@/lib/constants';
@@ -30,7 +28,6 @@ export default function NewMuralPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const captcha = useCaptcha();
 
   const { status, isSubmitting, submit, setError } = useFormSubmit<CreateMuralDTO>({
     onSubmit: async (data) => {
@@ -44,7 +41,6 @@ export default function NewMuralPage() {
       setFormData(INITIAL_FORM_DATA);
       setSelectedFile(null);
       setResetKey((prev) => prev + 1); // Reset map and image uploader
-      captcha.reset();
     },
     successMessage: '¡Enviado! Tu mural está pendiente de aprobación.',
     errorMessage: 'Error al enviar. Intenta de nuevo.',
@@ -67,11 +63,6 @@ export default function NewMuralPage() {
     // Validations
     if (!isValidGoogleMapsUrl(formData.url_maps)) {
       setError('Por favor selecciona un punto en el mapa.');
-      return;
-    }
-
-    if (!captcha.isValid()) {
-      setError('Respuesta incorrecta en la verificación.');
       return;
     }
 
@@ -122,7 +113,7 @@ export default function NewMuralPage() {
 
   return (
     <PageShell title="Enviar nueva ubicación" scrollableMain>
-      <form onSubmit={handleSubmit} className="h-full flex flex-col max-w-2xl mx-auto">
+      <form onSubmit={handleSubmit} className="h-full flex flex-col max-w-2xl mx-auto gap-3">
         <FormField label="Nombre del lugar" required>
           <Input
             value={formData.nombre}
@@ -139,18 +130,20 @@ export default function NewMuralPage() {
           />
         </FormField>
 
-        <MapField
-          key={resetKey}
-          value={formData.url_maps}
-          onLocationSelect={handleLocationSelect}
-          initialZoom={20}
-        />
+        <div className="flex-shrink-0">
+          <MapField
+            key={resetKey}
+            value={formData.url_maps}
+            onLocationSelect={handleLocationSelect}
+            initialZoom={20}
+          />
+        </div>
 
         <FormField label="Comentario (opcional)">
           <Textarea
             value={formData.comentario || ''}
             onChange={(e) => setFormData((prev) => ({ ...prev, comentario: e.target.value }))}
-            rows={3}
+            rows={4}
           />
         </FormField>
 
@@ -163,22 +156,17 @@ export default function NewMuralPage() {
           />
         </FormField>
 
-        <CaptchaField
-          question={captcha.question}
-          value={captcha.captcha.answer}
-          onChange={captcha.setAnswer}
-          disabled={!captcha.isClient}
-        />
+        <div className="flex flex-col gap-2 mt-1 flex-shrink-0">
+          <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full" size="lg">
+            {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar'}
+          </Button>
 
-        <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full flex-shrink-0">
-          {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar'}
-        </Button>
-
-        {status && (
-          <StatusAlert type={status.type} className="mt-3 flex-shrink-0">
-            {status.message}
-          </StatusAlert>
-        )}
+          {status && (
+            <StatusAlert type={status.type}>
+              {status.message}
+            </StatusAlert>
+          )}
+        </div>
       </form>
     </PageShell>
   );

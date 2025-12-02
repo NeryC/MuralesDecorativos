@@ -176,30 +176,28 @@ export default function AdminPage() {
   }
 
   return (
-    <PageShell title="Panel de Administración" scrollableMain>
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-sm text-gray-600">
-              Conectado como: <span className="font-semibold">{user.email}</span>
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <a
-              href="/admin/auditoria"
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
-            >
-              Ver Historial
-            </a>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
+    <PageShell 
+      title="Panel de Administración" 
+      scrollableMain
+      showMapButton={false}
+      rightActions={
+        <div className="flex gap-3">
+          <a
+            href="/admin/auditoria"
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+          >
+            Ver Historial
+          </a>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+          >
+            Cerrar Sesión
+          </button>
         </div>
-
+      }
+    >
+      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
         <div>
           <FilterButtons
             filter={filter}
@@ -218,6 +216,7 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nombre</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Candidato</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Link del Mapa</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Imagen</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Comentario</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>

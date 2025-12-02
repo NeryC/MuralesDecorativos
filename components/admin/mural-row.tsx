@@ -35,26 +35,31 @@ export const MuralRow = memo(function MuralRow({
 }: MuralRowProps) {
   const ultimaModificacionPendiente = getUltimaModificacionPendiente(mural);
   
+  // Verificar si hay modificaciones pendientes
+  const tieneModificacionesPendientes = mural.mural_modificaciones?.some(
+    (mod) => mod.estado_solicitud === 'pendiente'
+  ) || false;
+  
   // Deshabilitar todos los botones si hay alguna operación en proceso
   const isDisabled = isProcessingModificacion || isUpdatingEstado;
 
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-4 py-3 text-sm">
-        <div className="flex items-center gap-2">
-          <span>{mural.nombre}</span>
-          <Link
-            href={`/?highlight=${mural.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 text-xs underline"
-            title="Ver ubicación en el mapa"
-          >
-            🗺️ Ver en mapa
-          </Link>
-        </div>
+        <span>{mural.nombre}</span>
       </td>
       <td className="px-4 py-3 text-sm">{mural.candidato || '-'}</td>
+      <td className="px-4 py-3 text-sm">
+        <Link
+          href={`/?highlight=${mural.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 text-sm underline"
+          title="Ver ubicación en el mapa"
+        >
+          🗺️ Ver en mapa
+        </Link>
+      </td>
       <td className="px-4 py-3 align-top">
         <div className="flex gap-2 mb-2">
           {filter === 'all' ? (
@@ -206,7 +211,7 @@ export const MuralRow = memo(function MuralRow({
               </Button>
             </>
           )}
-          {(mural.estado === 'aprobado' || mural.estado === 'modificado_aprobado') && (
+          {(mural.estado === 'aprobado' || mural.estado === 'modificado_aprobado') && !tieneModificacionesPendientes && (
             <Button
               variant="danger"
               onClick={() => onUpdateEstado(mural.id, MURAL_ESTADOS.RECHAZADO)}
@@ -239,58 +244,17 @@ export const MuralRow = memo(function MuralRow({
           }
 
           return (
-            <div className="mt-2 space-y-2">
-              {modificacionesPendientes.map((mod) => (
-                <div key={mod.id} className="border rounded-md p-2 bg-gray-50">
-                  <div className="flex items-start gap-2">
-                    {mod.nueva_imagen_url && (
-                      <img
-                        src={mod.nueva_imagen_thumbnail_url || mod.nueva_imagen_url}
-                        alt="Propuesta"
-                        className="w-12 h-12 object-cover rounded cursor-pointer border border-gray-300"
-                        onClick={() => onImageClick(mod.nueva_imagen_url || '')}
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-600">
-                        {new Date(mod.created_at).toLocaleString('es-PY')}
-                      </div>
-                      {mod.nuevo_comentario && (
-                        <div className="text-xs text-gray-800 mt-1 line-clamp-2">
-                          {mod.nuevo_comentario}
-                        </div>
-                      )}
-                    </div>
-                    <EstadoBadge estado={mod.estado_solicitud} className="text-[10px]" />
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    {(() => {
-                      const modKey = `${mural.id}-${mod.id}`;
-                      const isThisProcessing = processingModificacionKey === modKey;
-                      return (
-                        <>
-                          <Button
-                            variant="success"
-                            onClick={() => onProcesarModificacion(mural.id, mod.id, 'approve')}
-                            className="text-[10px] px-2 py-1"
-                            disabled={isDisabled}
-                          >
-                            {isThisProcessing ? 'Procesando...' : '✓ Aprobar esta'}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => onProcesarModificacion(mural.id, mod.id, 'reject')}
-                            className="text-[10px] px-2 py-1"
-                            disabled={isDisabled}
-                          >
-                            {isThisProcessing ? 'Procesando...' : '✗ Rechazar'}
-                          </Button>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              ))}
+            <div className="mt-2">
+              <Link
+                href="/admin/modificaciones"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <span>📋</span>
+                <span>
+                  {modificacionesPendientes.length} solicitud{modificacionesPendientes.length !== 1 ? 'es' : ''} pendiente{modificacionesPendientes.length !== 1 ? 's' : ''}
+                </span>
+                <span>→</span>
+              </Link>
             </div>
           );
         })()}

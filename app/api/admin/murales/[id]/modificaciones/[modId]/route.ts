@@ -253,24 +253,55 @@ export async function PATCH(
       );
     }
 
-    // 7) Opcional: marcar otras solicitudes pendientes del mismo mural como rechazadas
-    const { error: rejectOthersError } = await supabase
+    // 7) Rechazar automáticamente otras solicitudes pendientes del mismo mural
+    // Primero obtenemos las IDs de las otras solicitudes pendientes para registrar en auditoría
+    const { data: otrasPendientes, error: fetchOthersError } = await supabase
       .from('mural_modificaciones')
-      .update({
-        estado_solicitud: 'rechazada',
-        procesado_at: new Date().toISOString(),
-      })
+      .select('id')
       .eq('mural_id', id)
       .eq('estado_solicitud', 'pendiente')
       .neq('id', modId);
 
-    if (rejectOthersError) {
-      console.error(
-        'Error rejecting other pending modifications for mural:',
-        rejectOthersError
-      );
-      // No hacemos return 500 para no romper el flujo principal;
-      // simplemente lo registramos.
+    if (fetchOthersError) {
+      console.error('Error fetching other pending modifications:', fetchOthersError);
+    } else if (otrasPendientes && otrasPendientes.length > 0) {
+      // Actualizar todas las demás solicitudes pendientes a rechazadas
+      const { error: rejectOthersError } = await supabase
+        .from('mural_modificaciones')
+        .update({
+          estado_solicitud: 'rechazada',
+          procesado_at: new Date().toISOString(),
+        })
+        .eq('mural_id', id)
+        .eq('estado_solicitud', 'pendiente')
+        .neq('id', modId);
+
+      if (rejectOthersError) {
+        console.error(
+          'Error rejecting other pending modifications for mural:',
+          rejectOthersError
+        );
+        // No hacemos return 500 para no romper el flujo principal;
+        // simplemente lo registramos.
+      } else {
+        // Registrar en auditoría cada solicitud rechazada automáticamente
+        for (const otraMod of otrasPendientes) {
+          await registrarAuditoria({
+            accion: 'rechazar_modificacion',
+            entidadTipo: 'modificacion',
+            entidadId: otraMod.id,
+            datosAnteriores: {
+              estado_solicitud: 'pendiente',
+              mural_id: id,
+            },
+            datosNuevos: {
+              estado_solicitud: 'rechazada',
+              procesado_at: new Date().toISOString(),
+            },
+            comentario: `Modificación rechazada automáticamente porque se aprobó otra modificación para el mural ${id}`,
+          });
+        }
+      }
     }
 
     // Registrar en auditoría

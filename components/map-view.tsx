@@ -86,7 +86,16 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
 
     // Initialize map
     if (!mapRef.current) {
-      mapRef.current = L.map('map-view').setView(
+      // Wait for DOM to be ready
+      const mapContainer = document.getElementById('map-view');
+      if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+      }
+
+      mapRef.current = L.map('map-view', {
+        preferCanvas: false,
+      }).setView(
         [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
         13
       );
@@ -95,6 +104,33 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
         maxZoom: 25,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(mapRef.current);
+
+      // Invalidate size multiple times to ensure map renders correctly
+      const invalidateSize = () => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      };
+
+      // Invalidate immediately and after delays
+      requestAnimationFrame(() => {
+        invalidateSize();
+        setTimeout(invalidateSize, 100);
+        setTimeout(invalidateSize, 300);
+        setTimeout(invalidateSize, 500);
+      });
+    } else {
+      // Invalidate size when murales change to ensure map resizes correctly
+      const invalidateSize = () => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      };
+      
+      requestAnimationFrame(() => {
+        invalidateSize();
+        setTimeout(invalidateSize, 100);
+      });
     }
 
     // Clear existing markers
@@ -249,8 +285,26 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
   }, [isClient, murales, onImageClick, highlightId]);
 
   if (!isClient) {
-    return <div className="h-screen bg-gray-100 flex items-center justify-center">Cargando mapa...</div>;
+    return (
+      <div 
+        className="h-full w-full flex items-center justify-center"
+        style={{
+          background: '#F8FAFC',
+        }}
+      >
+        <div className="spinner"></div>
+        <p className="ml-4 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Cargando mapa...
+        </p>
+      </div>
+    );
   }
 
-  return <div id="map-view" className="h-full w-full" />;
+  return (
+    <div 
+      id="map-view" 
+      className="h-full w-full"
+      style={{ minHeight: '500px' }}
+    />
+  );
 }

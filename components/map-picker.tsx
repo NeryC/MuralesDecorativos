@@ -37,72 +37,101 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     });
 
-    // Initialize map
-    if (!mapRef.current) {
-      const zoom = initialZoom ?? DEFAULT_COORDINATES.zoom;
-      mapRef.current = L.map('map-picker', {
-        preferCanvas: false,
-      }).setView(
-        [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
-        zoom
-      );
+    // Initialize map with retry logic
+    const initializeMap = () => {
+      if (mapRef.current) return;
 
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 20,
-        attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(mapRef.current);
-      
-      // Ensure the initial zoom is applied after map is ready
-      requestAnimationFrame(() => {
-        if (initialZoom && mapRef.current) {
-          mapRef.current.setZoom(initialZoom, { animate: false });
-          mapRef.current.invalidateSize();
-        }
-      });
-
-      // Invalidate size to ensure map respects container width
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        mapRef.current?.invalidateSize();
-      });
-
-      // Try to get user location
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          mapRef.current?.setView([lat, lng], 15);
-          requestAnimationFrame(() => {
-            mapRef.current?.invalidateSize();
-          });
-        });
+      // Wait for DOM to be ready
+      const mapContainer = document.getElementById('map-picker');
+      if (!mapContainer) {
+        // Retry after a short delay
+        setTimeout(initializeMap, 100);
+        return;
       }
 
-      // Add click handler
-      const handleMapClick = (e: L.LeafletMouseEvent) => {
-        const { lat, lng } = e.latlng;
+      // Check if container has dimensions
+      if (mapContainer.offsetHeight === 0 || mapContainer.offsetWidth === 0) {
+        setTimeout(initializeMap, 100);
+        return;
+      }
 
-        // Preserve current zoom and view
-        const currentZoom = mapRef.current?.getZoom();
-        const currentCenter = mapRef.current?.getCenter();
+      const zoom = initialZoom ?? DEFAULT_COORDINATES.zoom;
+      
+      try {
+        mapRef.current = L.map('map-picker', {
+          preferCanvas: false,
+        }).setView(
+          [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
+          zoom
+        );
 
-        if (markerRef.current) {
-          markerRef.current.setLatLng(e.latlng);
-        } else {
-          markerRef.current = L.marker(e.latlng).addTo(mapRef.current!);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 20,
+          attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(mapRef.current);
+        
+        // Invalidate size multiple times to ensure map renders correctly
+        const invalidateSize = () => {
+          if (mapRef.current) {
+            mapRef.current.invalidateSize();
+          }
+        };
+
+        // Invalidate immediately and after delays
+        requestAnimationFrame(() => {
+          invalidateSize();
+          if (initialZoom && mapRef.current) {
+            mapRef.current.setZoom(initialZoom, { animate: false });
+          }
+          setTimeout(invalidateSize, 100);
+          setTimeout(invalidateSize, 300);
+          setTimeout(invalidateSize, 500);
+          setTimeout(invalidateSize, 1000);
+        });
+
+        // Try to get user location
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            mapRef.current?.setView([lat, lng], 15);
+            requestAnimationFrame(() => {
+              mapRef.current?.invalidateSize();
+            });
+          });
         }
 
-        // Maintain zoom and view after marker placement
-        if (currentZoom && currentCenter) {
-          mapRef.current?.setView(currentCenter, currentZoom, { animate: false });
-        }
+        // Add click handler
+        const handleMapClick = (e: L.LeafletMouseEvent) => {
+          const { lat, lng } = e.latlng;
 
-        const url = generateGoogleMapsUrl(lat, lng);
-        onLocationSelectRef.current(url, lat, lng);
-      };
+          // Preserve current zoom and view
+          const currentZoom = mapRef.current?.getZoom();
+          const currentCenter = mapRef.current?.getCenter();
 
-      mapRef.current.on('click', handleMapClick);
-    }
+          if (markerRef.current) {
+            markerRef.current.setLatLng(e.latlng);
+          } else {
+            markerRef.current = L.marker(e.latlng).addTo(mapRef.current!);
+          }
+
+          // Maintain zoom and view after marker placement
+          if (currentZoom && currentCenter) {
+            mapRef.current?.setView(currentCenter, currentZoom, { animate: false });
+          }
+
+          const url = generateGoogleMapsUrl(lat, lng);
+          onLocationSelectRef.current(url, lat, lng);
+        };
+
+        mapRef.current.on('click', handleMapClick);
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    };
+
+    // Start initialization
+    requestAnimationFrame(initializeMap);
 
     return () => {
       if (mapRef.current) {
@@ -127,5 +156,11 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
     return <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">Cargando mapa...</div>;
   }
 
-  return <div id="map-picker" className="h-full w-full max-w-full rounded-md border border-gray-300 box-border overflow-hidden" />;
+  return (
+    <div 
+      id="map-picker" 
+      className="w-full max-w-full rounded-md border border-gray-300 box-border overflow-hidden" 
+      style={{ height: '100%', minHeight: '450px' }}
+    />
+  );
 }

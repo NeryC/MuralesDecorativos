@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { FormField } from '@/components/form-field';
-import { Input } from '@/components/ui/input';
 
 const MapPicker = dynamic(() => import('@/components/map-picker'), {
   ssr: false,
@@ -36,21 +34,16 @@ export function MapField({
   }, []);
 
   return (
-    <div className={`flex-1 min-h-0 flex flex-col ${className || ''}`}>
-      <div className="flex-1 min-h-0 flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex-shrink-0">
-          Selecciona la ubicación en el mapa{required && ' *'}
+    <div className={`flex flex-col gap-2 ${className || ''}`}>
+      <div className="flex flex-col">
+        <label className="block text-sm font-semibold text-gray-900 mb-1.5 shrink-0">
+          Selecciona la ubicación en el mapa{required && <span className="text-red-600 ml-1">*</span>}
         </label>
-        <div className="flex-1 min-h-[400px]">
+        <div className="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm" style={{ height: '450px', minHeight: '450px' }}>
           {isClient && <MapPicker onLocationSelect={onLocationSelect} initialZoom={initialZoom} />}
         </div>
       </div>
 
-      <div className="flex-shrink-0 mt-4">
-        <FormField label="Link de Google Maps (Automático)" required={false}>
-          <Input value={value} readOnly placeholder="Selecciona un punto en el mapa..." />
-        </FormField>
-      </div>
     </div>
   );
 }

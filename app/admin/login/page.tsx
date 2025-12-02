@@ -44,11 +44,12 @@ export default function AdminLoginPage() {
 
   return (
     <PageShell title="Iniciar Sesión - Administración">
-      <div className="max-w-md mx-auto mt-8">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Panel de Administración
-          </h2>
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              Panel de Administración
+            </h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -103,6 +104,7 @@ export default function AdminLoginPage() {
               <strong>Nota:</strong> Si no tienes una cuenta, contacta al administrador del sistema
               para crear una.
             </p>
+          </div>
           </div>
         </div>
       </div>

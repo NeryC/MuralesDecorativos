@@ -13,11 +13,13 @@ interface FormFieldProps {
 export function FormField({ label, required, children, className }: FormFieldProps) {
   return (
     <div className={cn('flex-shrink-0', className)}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-semibold text-gray-900 mb-1.5">
         {label}
-        {required && ' *'}
+        {required && <span className="text-red-600 ml-1">*</span>}
       </label>
-      {children}
+      <div>
+        {children}
+      </div>
     </div>
   );
 }
