@@ -13,13 +13,15 @@ interface RegistrarAuditoriaParams {
 }
 
 /**
- * Registra una acción en el historial de auditoría
+ * Registra una acción en el historial de auditoría.
+ * Retorna true si el registro fue exitoso, false si falló.
+ * No lanza error para no interrumpir el flujo principal.
  */
-export async function registrarAuditoria(params: RegistrarAuditoriaParams): Promise<void> {
+export async function registrarAuditoria(params: RegistrarAuditoriaParams): Promise<boolean> {
   try {
     const user = await getAuthenticatedUser();
     const headersList = await headers();
-    
+
     const supabase = await createClient();
 
     const auditoriaData = {
@@ -40,12 +42,12 @@ export async function registrarAuditoria(params: RegistrarAuditoriaParams): Prom
 
     if (error) {
       console.error('Error registrando auditoría:', error);
-      // No lanzamos error para no interrumpir el flujo principal
-      // pero lo registramos en consola
+      return false;
     }
+
+    return true;
   } catch (error) {
     console.error('Error inesperado al registrar auditoría:', error);
-    // No lanzamos error para no interrumpir el flujo principal
+    return false;
   }
 }
-
