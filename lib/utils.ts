@@ -94,7 +94,7 @@ export function extractCoordinates(url: string): { lat: number; lng: number } | 
         const lat = parseFloat(parts[0]);
         const lng = parseFloat(parts[1]);
         
-        if (!isNaN(lat) && !isNaN(lng)) {
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
           return { lat, lng };
         }
       }
@@ -167,4 +167,17 @@ export async function uploadImageWithThumbnail(
   ]);
 
   return { originalUrl, thumbnailUrl };
+}
+
+/**
+ * Escapa caracteres especiales HTML para prevenir XSS.
+ * Usar en todos los valores interpolados en strings HTML (ej: popups del mapa).
+ */
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
