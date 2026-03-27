@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { MURAL_ESTADOS } from '@/lib/constants';
 import { registrarAuditoria } from '@/lib/auditoria';
+import { apiError, apiSuccess } from '@/lib/api-response';
 
 /**
  * PATCH /api/admin/murales/[id]/modificaciones/[modId]
@@ -20,10 +21,7 @@ export async function PATCH(
     const { action } = body as { action?: 'approve' | 'reject' };
 
     if (!action || (action !== 'approve' && action !== 'reject')) {
-      return NextResponse.json(
-        { error: 'La acción es requerida y debe ser "approve" o "reject"' },
-        { status: 400 }
-      );
+      return apiError('La acción es requerida y debe ser "approve" o "reject"', 400);
     }
 
     const supabase = await createClient();
@@ -38,24 +36,15 @@ export async function PATCH(
 
     if (modError) {
       console.error('Error fetching mural_modificacion:', modError);
-      return NextResponse.json(
-        { error: 'No se encontró la solicitud de modificación' },
-        { status: 404 }
-      );
+      return apiError('No se encontró la solicitud de modificación', 404);
     }
 
     if (!modificacion) {
-      return NextResponse.json(
-        { error: 'Solicitud de modificación no encontrada' },
-        { status: 404 }
-      );
+      return apiError('Solicitud de modificación no encontrada', 404);
     }
 
     if (modificacion.estado_solicitud !== 'pendiente') {
-      return NextResponse.json(
-        { error: 'Solo se pueden procesar solicitudes pendientes' },
-        { status: 400 }
-      );
+      return apiError('Solo se pueden procesar solicitudes pendientes', 400);
     }
 
     // 2) Si la acción es rechazar, sólo actualizamos la solicitud
@@ -72,22 +61,16 @@ export async function PATCH(
 
       if (updateModError) {
         console.error('Error rejecting modification:', updateModError);
-        return NextResponse.json(
-          { error: 'No se pudo rechazar la solicitud de modificación', details: updateModError.message },
-          { status: 500 }
-        );
+        return apiError('No se pudo rechazar la solicitud de modificación', 500);
       }
 
       if (!updatedMod) {
         console.error('No se encontró la modificación después de actualizar');
-        return NextResponse.json(
-          { error: 'No se pudo verificar la actualización de la solicitud' },
-          { status: 500 }
-        );
+        return apiError('No se pudo verificar la actualización de la solicitud', 500);
       }
 
       // Registrar en auditoría
-      await registrarAuditoria({
+      const auditoriaOk = await registrarAuditoria({
         accion: 'rechazar_modificacion',
         entidadTipo: 'modificacion',
         entidadId: modId,
@@ -102,7 +85,10 @@ export async function PATCH(
         comentario: `Modificación rechazada para mural ${id}`,
       });
 
-      return NextResponse.json({ success: true, action: 'reject', data: updatedMod });
+      const responseBody = auditoriaOk
+        ? { success: true, action: 'reject', data: updatedMod }
+        : { success: true, action: 'reject', data: updatedMod, _auditWarning: 'Acción completada pero no se pudo registrar en auditoría.' };
+      return apiSuccess(responseBody);
     }
 
     // 3) Acción: approve
@@ -115,29 +101,20 @@ export async function PATCH(
 
     if (muralError || !mural) {
       console.error('Error fetching mural for approval:', muralError);
-      return NextResponse.json(
-        { error: 'No se pudo obtener el mural para aprobar la modificación' },
-        { status: 500 }
-      );
+      return apiError('No se pudo obtener el mural para aprobar la modificación', 500);
     }
 
     if (mural.estado === MURAL_ESTADOS.MODIFICADO_APROBADO) {
-      return NextResponse.json(
-        {
-          error:
-            'El mural ya fue modificado y aprobado. No se pueden aprobar más solicitudes.',
-        },
-        { status: 400 }
+      return apiError(
+        'El mural ya fue modificado y aprobado. No se pueden aprobar más solicitudes.',
+        400
       );
     }
 
     // 4) Aplicar los cambios de la solicitud al mural
     // Validar que tenemos los datos necesarios
     if (!modificacion.nueva_imagen_url) {
-      return NextResponse.json(
-        { error: 'La modificación no tiene una nueva imagen válida' },
-        { status: 400 }
-      );
+      return apiError('La modificación no tiene una nueva imagen válida', 400);
     }
 
     const updateMuralData = {
@@ -159,14 +136,7 @@ export async function PATCH(
 
     if (updateMuralError) {
       console.error('Error updating mural with approved modification:', updateMuralError);
-      return NextResponse.json(
-        { 
-          error: 'No se pudo aplicar la modificación al mural', 
-          details: updateMuralError.message,
-          code: updateMuralError.code 
-        },
-        { status: 500 }
-      );
+      return apiError('No se pudo aplicar la modificación al mural', 500);
     }
 
     // 5) Guardar la imagen original y marcar la solicitud como aprobada en una sola operación
@@ -213,14 +183,11 @@ export async function PATCH(
           .single();
 
         if (fallbackError) {
-          return NextResponse.json(
-            { error: 'No se pudo marcar la solicitud como aprobada', details: fallbackError.message },
-            { status: 500 }
-          );
+          return apiError('No se pudo marcar la solicitud como aprobada', 500);
         }
 
         // Registrar en auditoría para el fallback también
-        await registrarAuditoria({
+        const auditoriaOk = await registrarAuditoria({
           accion: 'aprobar_modificacion',
           entidadTipo: 'modificacion',
           entidadId: modId,
@@ -236,21 +203,18 @@ export async function PATCH(
           comentario: `Modificación aprobada y aplicada al mural ${id} (fallback)`,
         });
 
-        return NextResponse.json({ success: true, action: 'approve' });
+        const responseBody = auditoriaOk
+          ? { success: true, action: 'approve' }
+          : { success: true, action: 'approve', _auditWarning: 'Acción completada pero no se pudo registrar en auditoría.' };
+        return apiSuccess(responseBody);
       }
 
-      return NextResponse.json(
-        { error: 'No se pudo marcar la solicitud como aprobada', details: approveModError.message },
-        { status: 500 }
-      );
+      return apiError('No se pudo marcar la solicitud como aprobada', 500);
     }
 
     if (!updatedMod) {
       console.error('No se encontró la modificación después de actualizar');
-      return NextResponse.json(
-        { error: 'No se pudo verificar la actualización de la solicitud' },
-        { status: 500 }
-      );
+      return apiError('No se pudo verificar la actualización de la solicitud', 500);
     }
 
     // 7) Rechazar automáticamente otras solicitudes pendientes del mismo mural
@@ -305,7 +269,7 @@ export async function PATCH(
     }
 
     // Registrar en auditoría
-    await registrarAuditoria({
+    const auditoriaOk = await registrarAuditoria({
       accion: 'aprobar_modificacion',
       entidadTipo: 'modificacion',
       entidadId: modId,
@@ -326,15 +290,12 @@ export async function PATCH(
       comentario: `Modificación aprobada y aplicada al mural ${id}`,
     });
 
-    return NextResponse.json({ success: true, action: 'approve' });
+    const responseBody = auditoriaOk
+      ? { success: true, action: 'approve' }
+      : { success: true, action: 'approve', _auditWarning: 'Acción completada pero no se pudo registrar en auditoría.' };
+    return apiSuccess(responseBody);
   } catch (error) {
     console.error('Unexpected error processing mural modification:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return apiError('Error interno del servidor', 500);
   }
 }
-
-
-

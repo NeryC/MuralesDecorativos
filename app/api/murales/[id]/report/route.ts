@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { MURAL_ESTADOS } from '@/lib/constants';
+import { apiError, apiSuccess } from '@/lib/api-response';
 
 /**
  * POST /api/murales/[id]/report
@@ -22,10 +23,7 @@ export async function POST(
     const { nuevo_comentario, nueva_imagen_url, nueva_imagen_thumbnail_url } = body;
 
     if (!nueva_imagen_url) {
-      return NextResponse.json(
-        { error: 'La nueva imagen es requerida' },
-        { status: 400 }
-      );
+      return apiError('La nueva imagen es requerida', 400);
     }
 
     const supabase = await createClient();
@@ -39,24 +37,18 @@ export async function POST(
 
     if (fetchError) {
       console.error('Error fetching mural before report:', fetchError);
-      return NextResponse.json(
-        { error: 'No se pudo obtener el mural para validar el reporte' },
-        { status: 500 }
-      );
+      return apiError('No se pudo obtener el mural para validar el reporte', 500);
     }
 
     if (!muralActual) {
-      return NextResponse.json({ error: 'Mural no encontrado' }, { status: 404 });
+      return apiError('Mural no encontrado', 404);
     }
 
     // 2) Si ya fue modificado y aprobado, bloquear nuevas solicitudes
     if (muralActual.estado === MURAL_ESTADOS.MODIFICADO_APROBADO) {
-      return NextResponse.json(
-        {
-          error:
-            'El mural ya fue modificado y aprobado. No se pueden crear más solicitudes de modificación.',
-        },
-        { status: 400 }
+      return apiError(
+        'El mural ya fue modificado y aprobado. No se pueden crear más solicitudes de modificación.',
+        400
       );
     }
 
@@ -76,16 +68,16 @@ export async function POST(
 
     if (error) {
       console.error('Error reporting mural:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Mural no encontrado' }, { status: 404 });
+      return apiError('Mural no encontrado', 404);
     }
 
-    return NextResponse.json({ success: true, data });
+    return apiSuccess({ success: true, data });
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return apiError('Error interno del servidor', 500);
   }
 }

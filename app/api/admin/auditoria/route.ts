@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiError, apiSuccess } from '@/lib/api-response';
 
 /**
  * GET /api/admin/auditoria
@@ -33,19 +33,12 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Error fetching auditoria:', error);
-      return NextResponse.json(
-        { error: 'Error al obtener el historial de auditoría' },
-        { status: 500 }
-      );
+      return apiError('Error al obtener el historial de auditoría', 500);
     }
 
-    return NextResponse.json(Array.isArray(data) ? data : []);
+    return apiSuccess(Array.isArray(data) ? data : []);
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return apiError('Error interno del servidor', 500);
   }
 }
-

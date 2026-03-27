@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { registrarAuditoria } from '@/lib/auditoria';
+import { apiError, apiSuccess } from '@/lib/api-response';
 
 /**
  * GET /api/murales/[id]
@@ -22,17 +23,17 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching mural:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Mural no encontrado' }, { status: 404 });
+      return apiError('Mural no encontrado', 404);
     }
 
-    return NextResponse.json(data);
+    return apiSuccess(data);
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return apiError('Error interno del servidor', 500);
   }
 }
 
@@ -50,7 +51,7 @@ export async function PATCH(
     const { estado } = body;
 
     if (!estado) {
-      return NextResponse.json({ error: 'El campo estado es requerido' }, { status: 400 });
+      return apiError('El campo estado es requerido', 400);
     }
 
     const supabase = await createClient();
@@ -71,19 +72,21 @@ export async function PATCH(
 
     if (error) {
       console.error('Error updating mural:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Mural no encontrado' }, { status: 404 });
+      return apiError('Mural no encontrado', 404);
     }
 
     // Registrar en auditoría (intentará obtener el usuario si está autenticado)
     const referer = request.headers.get('referer');
     const isAdminRequest = referer?.includes('/admin');
+
+    let auditoriaOk = true;
     if (isAdminRequest) {
       const accion = estado === 'aprobado' ? 'aprobar_mural' : estado === 'rechazado' ? 'rechazar_mural' : 'actualizar_estado';
-      await registrarAuditoria({
+      auditoriaOk = await registrarAuditoria({
         accion,
         entidadTipo: 'mural',
         entidadId: id,
@@ -93,9 +96,12 @@ export async function PATCH(
       });
     }
 
-    return NextResponse.json({ success: true, data });
+    const responseBody = auditoriaOk
+      ? { success: true, data }
+      : { success: true, data, _auditWarning: 'Acción completada pero no se pudo registrar en auditoría.' };
+    return apiSuccess(responseBody);
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return apiError('Error interno del servidor', 500);
   }
 }
