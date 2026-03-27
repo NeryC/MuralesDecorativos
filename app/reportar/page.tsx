@@ -2,13 +2,11 @@
 
 import { useState, Suspense, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { PageShell } from '@/components/page-shell';
 import { StatusAlert } from '@/components/status-alert';
-import { FormField } from '@/components/form-field';
 import ImageUploader from '@/components/image-uploader';
 import ImageModal from '@/components/image-modal';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { useImageUpload } from '@/hooks/use-image-upload';
 import { MESSAGES } from '@/lib/messages';
@@ -112,7 +110,7 @@ function ReportarContent() {
 
   if (!muralId) {
     return (
-      <PageShell title="Reportar Mural" scrollableMain>
+      <PageShell title="Reportar mural" scrollableMain>
         <div className="max-w-2xl mx-auto">
           <p className="text-red-600 font-semibold">
             Error: {MESSAGES.ERROR.ID_INVALIDO} Vuelve al mapa e intenta de nuevo.
@@ -125,58 +123,107 @@ function ReportarContent() {
   const previousImageUrl = mural?.imagen_url || mural?.imagen_thumbnail_url;
 
   return (
-    <PageShell title="Reportar Mural Eliminado o Modificado" scrollableMain>
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-        <p className="text-gray-600">
-          Por favor, sube una foto actual del lugar y un comentario explicando la situación.
-        </p>
+    <PageShell
+      title="Reportar mural"
+      subtitle="Reportar cambio o eliminación"
+      fullHeight={false}
+      scrollableMain={true}
+    >
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          {/* Left column: text fields */}
+          <div className="flex flex-col gap-4">
+            {muralName && (
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
+                  Mural
+                </label>
+                <p className="text-sm mt-1" style={{ color: '#1e293b' }}>{muralName}</p>
+              </div>
+            )}
 
-        {previousImageUrl && (
-          <FormField label="Foto Anterior">
-            <div className="relative inline-block">
-              <img
-                src={previousImageUrl}
-                alt="Foto anterior del mural"
-                className="max-w-[300px] max-h-[300px] w-auto h-auto rounded-md border border-gray-300 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => setSelectedImage(previousImageUrl)}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
+                Comentario <span style={{ color: '#64748b', fontWeight: 400, textTransform: 'none' }}>(opcional)</span>
+              </label>
+              <textarea
+                value={formData.nuevo_comentario || ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))
+                }
+                rows={5}
+                placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1.5px solid #e2e8f0',
+                  fontSize: '13px',
+                  outline: 'none',
+                  background: 'white',
+                }}
               />
             </div>
-          </FormField>
-        )}
+          </div>
 
-        <FormField label="Nueva Foto (Obligatorio)" required>
-          <ImageUploader
-            onFileSelect={handleFileSelect}
-            onError={(error) => setError(error)}
-            disabled={isSubmitting || isUploadingImage}
-            resetKey={resetKey}
-          />
-        </FormField>
+          {/* Right column: current mural image reference + new photo upload */}
+          <div className="flex flex-col gap-4">
+            {previousImageUrl && (
+              <div style={{ marginBottom: '16px' }}>
+                <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#374151' }}>
+                  Foto actual del mural
+                </div>
+                <img
+                  src={previousImageUrl}
+                  alt="Foto actual"
+                  className="rounded-lg object-cover w-full cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{ maxHeight: '160px', border: '1px solid #e2e8f0' }}
+                  onClick={() => setSelectedImage(previousImageUrl)}
+                />
+              </div>
+            )}
 
-        <FormField label="Comentario (Opcional)">
-          <Textarea
-            value={formData.nuevo_comentario || ''}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))
-            }
-            rows={3}
-            placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
-          />
-        </FormField>
-
-        <Button type="submit" variant="danger" disabled={isSubmitting || isUploadingImage} className="w-full">
-          {isUploadingImage 
-            ? MESSAGES.LOADING.SUBIENDO_IMAGEN 
-            : isSubmitting 
-            ? MESSAGES.LOADING.ENVIANDO 
-            : MESSAGES.UI.ENVIAR_REPORTE}
-        </Button>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
+                Nueva foto <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <div className="mt-1">
+                <ImageUploader
+                  onFileSelect={handleFileSelect}
+                  onError={(error) => setError(error)}
+                  disabled={isSubmitting || isUploadingImage}
+                  resetKey={resetKey}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {status && (
-          <StatusAlert type={status.type}>
-            {status.message}
-          </StatusAlert>
+          <div className="mt-4">
+            <StatusAlert type={status.type}>
+              {status.message}
+            </StatusAlert>
+          </div>
         )}
+
+        <div className="flex justify-end gap-3 mt-6 pt-4" style={{ borderTop: '1px solid #f1f5f9' }}>
+          <Link href="/" className="px-4 py-2 text-sm font-medium rounded-lg" style={{ background: 'white', border: '1.5px solid #e2e8f0', color: '#64748b' }}>
+            Cancelar
+          </Link>
+          <button
+            type="submit"
+            disabled={isSubmitting || isUploadingImage}
+            className="px-5 py-2 text-sm font-bold rounded-lg text-white transition-colors"
+            style={{ background: isSubmitting || isUploadingImage ? '#93c5fd' : '#1e40af' }}
+          >
+            {isUploadingImage
+              ? MESSAGES.LOADING.SUBIENDO_IMAGEN
+              : isSubmitting
+              ? 'Enviando...'
+              : 'Enviar reporte →'}
+          </button>
+        </div>
       </form>
       <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
     </PageShell>
