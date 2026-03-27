@@ -156,8 +156,9 @@ export default function AdminPage() {
   }
 
   return (
-    <PageShell 
-      title="Panel de Administración" 
+    <PageShell
+      title="Mural Decorativo"
+      subtitle="Panel de administración"
       scrollableMain
       showMapButton={true}
       adminActions={{

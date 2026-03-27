@@ -3,7 +3,6 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { PageShell } from '@/components/page-shell';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -43,72 +42,86 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <PageShell title="Iniciar Sesión - Administración">
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              Panel de Administración
-            </h2>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8fafc' }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '12px',
+        padding: '32px',
+        width: '100%',
+        maxWidth: '400px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+      }}>
+        {/* Card header */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <div style={{
+              width: '36px', height: '36px', background: '#1e3a5f', borderRadius: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: '16px',
+            }}>🗺</div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="admin@example.com"
-                disabled={loading}
-              />
+              <div style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b' }}>Mural Admin</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8' }}>Panel de administración</div>
             </div>
+          </div>
+          <p style={{ fontSize: '13px', color: '#64748b' }}>Ingresá con tus credenciales de administrador</p>
+        </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-                disabled={loading}
-              />
-            </div>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
-            <button
-              type="submit"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Correo electrónico
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="admin@example.com"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </form>
+            />
+          </div>
 
-          <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-            <p className="text-sm text-yellow-800">
-              <strong>Nota:</strong> Si no tienes una cuenta, contacta al administrador del sistema
-              para crear una.
-            </p>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="••••••••"
+              disabled={loading}
+            />
           </div>
-          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </button>
+        </form>
+
+        <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+          <p className="text-sm text-yellow-800">
+            <strong>Nota:</strong> Si no tienes una cuenta, contacta al administrador del sistema
+            para crear una.
+          </p>
         </div>
       </div>
-    </PageShell>
+    </div>
   );
 }
-
