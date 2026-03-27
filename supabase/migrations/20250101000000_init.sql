@@ -9,13 +9,13 @@ CREATE TABLE murales (
   imagen_url TEXT NOT NULL,
   imagen_thumbnail_url TEXT,
   estado TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'aprobado', 'rechazado', 'modificado_pendiente', 'modificado_aprobado')),
-  
+
   -- Campos para reportes de eliminación/modificación
   nuevo_comentario TEXT,
   nueva_imagen_url TEXT,
   nueva_imagen_thumbnail_url TEXT,
   reportado_at TIMESTAMP WITH TIME ZONE,
-  
+
   -- Metadata
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -40,22 +40,22 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE mural_modificaciones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   mural_id UUID NOT NULL REFERENCES murales(id) ON DELETE CASCADE,
-  
+
   -- Datos propuestos en la modificación
   nuevo_comentario TEXT,
   nueva_imagen_url TEXT NOT NULL,
   nueva_imagen_thumbnail_url TEXT,
-  
+
   -- Imagen original del mural al momento de aprobar (para poder mostrar antes/después)
   imagen_original_url TEXT,
   imagen_original_thumbnail_url TEXT,
-  
+
   -- Estado de la solicitud de modificación
   estado_solicitud TEXT NOT NULL DEFAULT 'pendiente' CHECK (estado_solicitud IN ('pendiente', 'aprobada', 'rechazada')),
   procesado_at TIMESTAMP WITH TIME ZONE,
-  
+
   -- Metadata
   reportado_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -130,12 +130,12 @@ ALTER TABLE mural_modificaciones
 CREATE TABLE auditoria (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   -- Usuario que realizó la acción
   usuario_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   usuario_email TEXT,
   usuario_nombre TEXT,
-  
+
   -- Tipo de acción
   accion TEXT NOT NULL CHECK (accion IN (
     'aprobar_mural',
@@ -144,18 +144,18 @@ CREATE TABLE auditoria (
     'rechazar_modificacion',
     'actualizar_estado'
   )),
-  
+
   -- Entidad afectada
   entidad_tipo TEXT NOT NULL CHECK (entidad_tipo IN ('mural', 'modificacion')),
   entidad_id UUID NOT NULL,
-  
+
   -- Datos del cambio (JSON para flexibilidad)
   datos_anteriores JSONB,
   datos_nuevos JSONB,
-  
+
   -- Comentario opcional
   comentario TEXT,
-  
+
   -- IP y user agent para trazabilidad
   ip_address TEXT,
   user_agent TEXT
