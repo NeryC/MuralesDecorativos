@@ -68,37 +68,53 @@ export default function ImageUploader({ onFileSelect, onError, disabled, resetKe
 
   return (
     <div>
-      {!preview && (
+      <div
+        className="relative cursor-pointer transition-colors"
+        style={{
+          border: '2px dashed #cbd5e1',
+          borderRadius: '10px',
+          padding: '24px',
+          textAlign: 'center',
+          background: preview ? 'transparent' : '#f8fafc',
+        }}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {preview ? (
+          <img
+            src={preview}
+            alt="Preview"
+            className="mx-auto rounded-lg object-cover"
+            style={{ maxHeight: '160px', maxWidth: '100%' }}
+          />
+        ) : (
+          <>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>📷</div>
+            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
+              Hacer click para seleccionar foto
+            </div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+              JPG, PNG, WebP · Máx. 10MB
+            </div>
+          </>
+        )}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          className="hidden"
           onChange={handleFileChange}
-          disabled={disabled}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-          required
         />
-      )}
-      {preview && (
-        <div className="flex items-start gap-3">
-          <div className="relative inline-block">
-            <img
-              src={preview}
-              alt="Preview"
-              className="max-w-[200px] max-h-[200px] w-auto h-auto rounded-md border border-gray-300 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setSelectedImage(preview)}
-            />
-          </div>
-          {!disabled && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 flex-shrink-0"
-              aria-label="Eliminar imagen"
-            >
-              ×
-            </button>
-          )}
+      </div>
+      {preview && !disabled && (
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 flex-shrink-0"
+            aria-label="Eliminar imagen"
+          >
+            ×
+          </button>
         </div>
       )}
       <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
