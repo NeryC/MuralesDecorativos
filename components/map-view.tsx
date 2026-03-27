@@ -50,7 +50,7 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
   useEffect(() => {
     if (!isClient || typeof window === 'undefined') return;
 
-    delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl;
+    delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
       iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -87,7 +87,7 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
 
     // Exponer función global para clicks en imágenes dentro de popups
     if (typeof window !== 'undefined') {
-      (window as Record<string, unknown>).openImageModal = (imageUrl: string) => {
+      (window as unknown as Record<string, unknown>).openImageModal = (imageUrl: string) => {
         onImageClick?.(imageUrl);
       };
     }
@@ -135,7 +135,7 @@ export default function MapView({ murales, onImageClick, highlightId }: MapViewP
     });
 
     if (highlightedMarker && highlightedCoords && mapRef.current) {
-      const coords = highlightedCoords;
+      const coords = highlightedCoords as { lat: number; lng: number };
       setTimeout(() => {
         if (mapRef.current && highlightedMarker) {
           mapRef.current.flyTo([coords.lat, coords.lng], 16, { animate: true, duration: 1.0 });
