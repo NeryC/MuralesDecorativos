@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import ImageModal from '@/components/image-modal';
 import { PageShell } from '@/components/page-shell';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { StatsGrid } from '@/components/stats-grid';
 import { useMuralData } from '@/hooks/use-mural-data';
 
 // Dynamic import to avoid SSR issues with Leaflet
@@ -40,12 +39,14 @@ function HomePageContent() {
   const stats = useMemo(() => {
     const total = murales.length;
     const aprobados = murales.filter(m => m.estado === 'aprobado').length;
-    const modificados = murales.filter(m => m.estado === 'modificado_aprobado').length;
+    const pendientes = murales.filter(m => m.estado === 'pendiente').length;
+    const modificados = murales.filter(m => m.estado === 'modificado_aprobado' || m.estado === 'modificado_pendiente').length;
 
     return [
-      { label: 'Total Murales', value: total, color: '#3B82F6' },
-      { label: 'Aprobados', value: aprobados, color: '#DC2626' }, // Rojo - nuevos
-      { label: 'Modificados', value: modificados, color: '#10B981' }, // Verde - intervenidos
+      { label: 'Total', value: total, color: '#1e40af' },
+      { label: 'Aprobados', value: aprobados, color: '#059669' },
+      { label: 'Pendientes', value: pendientes, color: '#d97706' },
+      { label: 'Modificados', value: modificados, color: '#3b82f6' },
     ];
   }, [murales]);
 
@@ -56,8 +57,8 @@ function HomePageContent() {
   return (
     <>
       <PageShell
-        title="Murales de Propaganda"
-        subtitle="Todos los murales de propaganda del País"
+        title="Mural Decorativo"
+        subtitle="Registro de propaganda política · Paraguay"
         fullHeight
         scrollableMain={false}
         showMapButton={false}
@@ -65,11 +66,11 @@ function HomePageContent() {
         rightActions={
           <Link
             href="/nuevo"
-            className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 bg-gray-900 text-white hover:bg-gray-800"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+            style={{ background: '#1e40af' }}
           >
-            <span className="text-xl">➕</span>
-            <span className="hidden sm:inline">Agregar Nuevo</span>
-            <span className="sm:hidden">Nuevo</span>
+            <span>+</span>
+            <span>Agregar mural</span>
           </Link>
         }
       >
@@ -78,12 +79,27 @@ function HomePageContent() {
             className={`h-full w-full mx-auto card overflow-hidden relative ${
               selectedImage ? 'pointer-events-none' : ''
             }`}
-            style={{ 
+            style={{
               height: '100%',
               maxWidth: '100%',
             }}
           >
             <MapView murales={murales} onImageClick={handleImageClick} highlightId={highlightId || undefined} />
+            {/* FAB mobile: solo visible en pantallas pequeñas */}
+            <Link
+              href="/nuevo"
+              className="sm:hidden absolute bottom-4 right-4 z-[1000] flex items-center justify-center text-white font-bold text-2xl transition-transform active:scale-95"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: '#1e40af',
+                boxShadow: '0 4px 12px rgba(30,64,175,0.4)',
+              }}
+              aria-label="Agregar nuevo mural"
+            >
+              +
+            </Link>
           </div>
         </div>
       </PageShell>
