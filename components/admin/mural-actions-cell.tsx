@@ -2,7 +2,6 @@
 
 import { memo, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { MURAL_ESTADOS } from '@/lib/constants';
 import type { MuralWithModificaciones, MuralModificacion } from '@/lib/types';
 
@@ -45,43 +44,39 @@ function MuralActionsCellContent({
       <div className="flex gap-2">
         {mural.estado === 'pendiente' && (
           <>
-            <Button
-              variant="success"
+            <button
               onClick={handleAprobar}
-              className="text-xs px-2 py-1"
+              style={{ background: '#dcfce7', color: '#166534', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
               disabled={isDisabled}
             >
               {isUpdatingEstado ? '...' : '✓ Aprobar'}
-            </Button>
-            <Button
-              variant="danger"
+            </button>
+            <button
               onClick={handleRechazar}
-              className="text-xs px-2 py-1"
+              style={{ background: '#fef2f2', color: '#dc2626', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
               disabled={isDisabled}
             >
               {isUpdatingEstado ? '...' : '✗ Rechazar'}
-            </Button>
+            </button>
           </>
         )}
         {(mural.estado === 'aprobado' || mural.estado === 'modificado_aprobado') && !tieneModificacionesPendientes && (
-          <Button
-            variant="danger"
+          <button
             onClick={handleRechazar}
-            className="text-xs px-2 py-1"
+            style={{ background: '#fef2f2', color: '#dc2626', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
             disabled={isDisabled}
           >
             {isUpdatingEstado ? '...' : 'Rechazar'}
-          </Button>
+          </button>
         )}
         {mural.estado === 'rechazado' && (
-          <Button
-            variant="success"
+          <button
             onClick={handleAprobar}
-            className="text-xs px-2 py-1"
+            style={{ background: '#dcfce7', color: '#166534', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
             disabled={isDisabled}
           >
             {isUpdatingEstado ? '...' : 'Aprobar'}
-          </Button>
+          </button>
         )}
       </div>
 
