@@ -1,7 +1,58 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Rate limiting: Map en memoria (se resetea en cold starts, aceptable para este caso de uso)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 60 segundos
+// Rutas exactas a proteger (POST /api/murales crea murales, POST /api/upload sube imágenes)
+// También incluye /api/murales/[id]/report — es POST público y merece protección
+const RATE_LIMITED_PATHS = ['/api/upload'];
+
+function isRateLimited(ip: string, pathname: string): boolean {
+  // Aplicar en /api/upload y cualquier POST a /api/murales (crear o reportar)
+  const isMuralesPost = pathname === '/api/murales' || pathname.startsWith('/api/murales/');
+  const isUploadPost = RATE_LIMITED_PATHS.some(path => pathname.startsWith(path));
+  if (!isMuralesPost && !isUploadPost) {
+    return false;
+  }
+
+  const now = Date.now();
+  // Agrupar todas las rutas /api/murales/* bajo la misma key para contar el total
+  // Esto da 10 req/min por IP para TODA la familia murales, no 10 por sub-ruta
+  const routeFamily = isMuralesPost ? 'murales' : 'upload';
+  const key = `${ip}:${routeFamily}`;
+  const record = rateLimitMap.get(key);
+
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  record.count++;
+  if (record.count > RATE_LIMIT_MAX) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
+  // Rate limiting solo en POSTs
+  if (request.method === 'POST') {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      '127.0.0.1';
+
+    if (isRateLimited(ip, request.nextUrl.pathname)) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Intentá de nuevo en un minuto.' },
+        { status: 429 }
+      );
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -17,7 +68,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           response = NextResponse.next({
@@ -31,7 +82,6 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refrescar la sesión si es necesario
   await supabase.auth.getUser();
 
   return response;
@@ -39,14 +89,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-

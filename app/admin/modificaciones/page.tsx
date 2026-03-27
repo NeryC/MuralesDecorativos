@@ -51,7 +51,7 @@ export default function ModificacionesPage() {
       
       // Filtrar solo murales con modificaciones pendientes
       const muralesConModificaciones = muralesList.filter((mural) =>
-        mural.mural_modificaciones?.some((mod) => mod.estado_solicitud === 'pendiente')
+        mural.mural_modificaciones?.some((mod: { estado_solicitud: string }) => mod.estado_solicitud === 'pendiente')
       );
       
       setMurales(muralesConModificaciones);
