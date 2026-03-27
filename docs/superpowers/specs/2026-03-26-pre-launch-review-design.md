@@ -266,7 +266,7 @@ const responseBody = auditoriaOk
 return apiSuccess(responseBody)
 ```
 
-`_auditWarning` es un campo `string` opcional en el body de la respuesta exitosa. Aplica a todas las API routes admin que llaman a `registrarAuditoria()`: `PATCH /api/admin/murales/[id]` y `PATCH /api/admin/murales/[id]/modificaciones/[modId]`.
+`_auditWarning` es un campo `string` opcional en el body de la respuesta exitosa. Aplica a las dos routes que llaman a `registrarAuditoria()`: `PATCH /api/murales/[id]` (actualización de estado de mural) y `PATCH /api/admin/murales/[id]/modificaciones/[modId]` (procesar modificación).
 
 El cliente (páginas admin) solo logea el warning en consola: `if (result._auditWarning) console.warn('[Auditoría]', result._auditWarning)`. No se muestra UI al admin — no es un error que requiera acción del usuario.
 
@@ -373,7 +373,6 @@ El cliente (páginas admin) solo logea el warning en consola: `if (result._audit
 | `app/api/murales/[id]/route.ts` | Usar apiResponse |
 | `app/api/murales/[id]/report/route.ts` | Usar apiResponse |
 | `app/api/admin/murales/route.ts` | Usar apiResponse |
-| `app/api/admin/murales/[id]/route.ts` | Usar apiResponse |
 | `app/api/admin/murales/[id]/modificaciones/[modId]/route.ts` | Usar apiResponse |
 | `app/api/admin/auditoria/route.ts` | Usar apiResponse |
 | `components/map-view.tsx` | Usar buildPopupHTML + rediseño |
