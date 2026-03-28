@@ -37,7 +37,7 @@ function isRateLimited(ip: string, pathname: string): boolean {
   return false;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Rate limiting solo en POSTs
   if (request.method === 'POST') {
     const ip =
