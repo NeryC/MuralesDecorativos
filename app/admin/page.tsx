@@ -157,7 +157,7 @@ export default function AdminPage() {
 
   return (
     <PageShell
-      title="Mural Decorativo"
+      title="Murales Políticos"
       subtitle="Panel de administración"
       scrollableMain
       showMapButton={true}

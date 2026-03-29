@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
               color: 'white', fontSize: '16px',
             }}>🗺</div>
             <div>
-              <div style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b' }}>Mural Admin</div>
+              <div style={{ fontWeight: '700', fontSize: '15px', color: '#1e293b' }}>Murales Políticos</div>
               <div style={{ fontSize: '11px', color: '#94a3b8' }}>Panel de administración</div>
             </div>
           </div>

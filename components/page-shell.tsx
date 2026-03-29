@@ -48,7 +48,7 @@ function AdminSidebar({
       className="hidden lg:flex flex-col h-full"
     >
       <div style={{ borderBottom: '1px solid #1e293b' }} className="px-4 py-4">
-        <div className="text-white font-bold text-sm">Mural Admin</div>
+        <div className="text-white font-bold text-sm">Murales Políticos</div>
         <div className="text-xs mt-0.5" style={{ color: '#64748b' }}>Panel de gestión</div>
       </div>
       <nav className="flex-1 py-2">
@@ -169,12 +169,12 @@ export function PageShell({
       )}
 
       {/* Body: sidebar + main */}
-      <div className={`flex flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 ${isAdmin ? 'gap-0' : 'py-4 gap-0'}`}>
+      <div className={`flex flex-1 ${fullHeight ? 'min-h-0' : ''} max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 ${isAdmin ? 'gap-0' : 'py-4 gap-0'}`}>
         {isAdmin && adminActions && (
           <AdminSidebar {...adminActions} />
         )}
         <main
-          className={`flex-1 min-w-0 ${isAdmin ? 'lg:pl-6 py-4' : ''} ${scrollableMain ? 'overflow-auto' : 'overflow-hidden flex flex-col min-h-0'}`}
+          className={`flex-1 min-w-0 ${isAdmin ? 'lg:pl-6 py-4' : ''} ${fullHeight && scrollableMain ? 'overflow-auto' : fullHeight ? 'overflow-hidden flex flex-col min-h-0' : ''}`}
         >
           {children}
         </main>

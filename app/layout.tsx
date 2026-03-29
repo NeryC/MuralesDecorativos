@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mural Decorativo — Registro de propaganda política en Paraguay",
+  title: "Murales Políticos — Registro de propaganda política en Paraguay",
   description: "Mapa colaborativo para registrar y documentar murales de propaganda política en Paraguay. Reportá murales, seguí modificaciones y consultá el historial.",
   openGraph: {
-    title: "Mural Decorativo",
+    title: "Murales Políticos",
     description: "Mapa colaborativo de murales de propaganda política en Paraguay",
     locale: "es_PY",
     type: "website",

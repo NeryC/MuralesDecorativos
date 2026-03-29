@@ -57,7 +57,7 @@ function HomePageContent() {
   return (
     <>
       <PageShell
-        title="Mural Decorativo"
+        title="Murales Políticos"
         subtitle="Registro de propaganda política · Paraguay"
         fullHeight
         scrollableMain={false}

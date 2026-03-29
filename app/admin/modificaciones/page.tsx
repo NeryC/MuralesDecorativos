@@ -107,6 +107,13 @@ export default function ModificacionesPage() {
     return modsPendientes.map((mod) => ({ mural, modificacion: mod }));
   });
 
+  const handleLogout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  }, [router]);
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -118,13 +125,6 @@ export default function ModificacionesPage() {
   if (!user) {
     return null;
   }
-
-  const handleLogout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/admin/login');
-    router.refresh();
-  }, [router]);
 
   return (
     <PageShell 

@@ -130,71 +130,71 @@ function ReportarContent() {
       scrollableMain={true}
     >
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {/* Left column: text fields */}
-          <div className="flex flex-col gap-4">
-            {muralName && (
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
-                  Mural
-                </label>
-                <p className="text-sm mt-1" style={{ color: '#1e293b' }}>{muralName}</p>
-              </div>
-            )}
-
+        <div className="flex flex-col gap-4">
+          {muralName && (
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
-                Comentario <span style={{ color: '#64748b', fontWeight: 400, textTransform: 'none' }}>(opcional)</span>
+                Mural
               </label>
-              <textarea
-                value={formData.nuevo_comentario || ''}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))
-                }
-                rows={5}
-                placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1.5px solid #e2e8f0',
-                  fontSize: '13px',
-                  outline: 'none',
-                  background: 'white',
-                }}
-              />
+              <p className="text-sm mt-1" style={{ color: '#1e293b' }}>{muralName}</p>
             </div>
+          )}
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
+              Comentario <span style={{ color: '#64748b', fontWeight: 400, textTransform: 'none' }}>(opcional)</span>
+            </label>
+            <textarea
+              value={formData.nuevo_comentario || ''}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, nuevo_comentario: e.target.value }))
+              }
+              rows={5}
+              placeholder="Ej: El mural fue pintado encima, ahora es una pared blanca."
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1.5px solid #e2e8f0',
+                fontSize: '13px',
+                outline: 'none',
+                background: 'white',
+              }}
+            />
           </div>
 
-          {/* Right column: current mural image reference + new photo upload */}
-          <div className="flex flex-col gap-4">
-            {previousImageUrl && (
-              <div style={{ marginBottom: '16px' }}>
-                <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#374151' }}>
-                  Foto actual del mural
-                </div>
-                <img
-                  src={previousImageUrl}
-                  alt="Foto actual"
-                  className="rounded-lg object-cover w-full cursor-pointer hover:opacity-90 transition-opacity"
-                  style={{ maxHeight: '160px', border: '1px solid #e2e8f0' }}
-                  onClick={() => setSelectedImage(previousImageUrl)}
-                />
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#374151' }}>
+              Foto actual del mural
+            </div>
+            {loadingMural ? (
+              <div className="rounded-lg bg-gray-100 animate-pulse" style={{ height: '160px', border: '1px solid #e2e8f0' }} />
+            ) : previousImageUrl ? (
+              <img
+                src={previousImageUrl}
+                alt="Foto actual"
+                className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ border: '1px solid #e2e8f0', maxHeight: '360px', width: 'auto', display: 'block' }}
+                onClick={() => setSelectedImage(previousImageUrl)}
+              />
+            ) : (
+              <div className="rounded-lg flex items-center justify-center text-sm" style={{ height: '160px', border: '1px solid #e2e8f0', color: '#94a3b8', background: '#f8fafc' }}>
+                No se pudo cargar la imagen
               </div>
             )}
+          </div>
 
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
-                Nueva foto <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <div className="mt-1">
-                <ImageUploader
-                  onFileSelect={handleFileSelect}
-                  onError={(error) => setError(error)}
-                  disabled={isSubmitting || isUploadingImage}
-                  resetKey={resetKey}
-                />
-              </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#374151', letterSpacing: '0.5px' }}>
+              Nueva foto <span style={{ color: '#dc2626' }}>*</span>
+            </label>
+            <div className="mt-1">
+              <ImageUploader
+                onFileSelect={handleFileSelect}
+                onError={(error) => setError(error)}
+                disabled={isSubmitting || isUploadingImage}
+                resetKey={resetKey}
+              />
             </div>
           </div>
         </div>
