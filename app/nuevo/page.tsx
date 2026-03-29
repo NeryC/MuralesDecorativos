@@ -93,7 +93,7 @@ export default function NewMuralPage() {
       scrollableMain={true}
     >
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="flex flex-col gap-6">
           {/* Left column: text input fields */}
           <div className="flex flex-col gap-4">
             <div>
