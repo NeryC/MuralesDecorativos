@@ -2,7 +2,7 @@
 export const DEFAULT_COORDINATES = {
   lat: -25.3085,
   lng: -57.6056,
-  zoom: 50,
+  zoom: 13,
 };
 
 // Configuración de compresión de imágenes

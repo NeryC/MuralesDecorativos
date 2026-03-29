@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Murales Decorativos",
-  description: "Mapa colaborativo de murales decorativos",
+  title: "Mural Decorativo — Registro de propaganda política en Paraguay",
+  description: "Mapa colaborativo para registrar y documentar murales de propaganda política en Paraguay. Reportá murales, seguí modificaciones y consultá el historial.",
+  openGraph: {
+    title: "Mural Decorativo",
+    description: "Mapa colaborativo de murales de propaganda política en Paraguay",
+    locale: "es_PY",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
