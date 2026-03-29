@@ -141,7 +141,7 @@ export default function NewMuralPage() {
                 key={resetKey}
                 value={formData.url_maps}
                 onLocationSelect={handleLocationSelect}
-                initialZoom={20}
+                initialZoom={13}
               />
             </div>
 

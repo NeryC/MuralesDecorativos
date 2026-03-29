@@ -66,7 +66,7 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
         );
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 20,
+          maxZoom: 19,
           attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(mapRef.current);
         

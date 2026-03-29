@@ -24,7 +24,7 @@ export function MapField({
   value,
   onLocationSelect,
   required = true,
-  initialZoom = 20,
+  initialZoom = 13,
   className,
 }: MapFieldProps) {
   const [isClient, setIsClient] = useState(false);
