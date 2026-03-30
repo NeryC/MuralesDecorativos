@@ -14,18 +14,10 @@ interface MapViewProps {
   highlightId?: string;
 }
 
-const RED_ICON = new URL(
-  'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png'
-).href;
-const GREEN_ICON = new URL(
-  'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png'
-).href;
-const BLUE_ICON = new URL(
-  'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png'
-).href;
-const SHADOW = new URL(
-  'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png'
-).href;
+const RED_ICON = '/marker-icon-red.png';
+const GREEN_ICON = '/marker-icon-green.png';
+const BLUE_ICON = '/marker-icon-blue.png';
+const SHADOW = '/marker-shadow.png';
 
 function makeIcon(iconUrl: string) {
   return new L.Icon({

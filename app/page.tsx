@@ -88,7 +88,7 @@ function HomePageContent() {
             {/* FAB mobile: solo visible en pantallas pequeñas */}
             <Link
               href="/nuevo"
-              className="sm:hidden absolute bottom-4 right-4 z-[1000] flex items-center justify-center text-white font-bold text-2xl transition-transform active:scale-95"
+              className="sm:hidden fixed bottom-6 right-4 z-[1000] flex items-center justify-center text-white font-bold text-2xl transition-transform active:scale-95"
               style={{
                 width: '48px',
                 height: '48px',
