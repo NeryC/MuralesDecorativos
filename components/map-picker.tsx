@@ -60,6 +60,7 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
       try {
         mapRef.current = L.map('map-picker', {
           preferCanvas: false,
+          scrollWheelZoom: false,
         }).setView(
           [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
           zoom
