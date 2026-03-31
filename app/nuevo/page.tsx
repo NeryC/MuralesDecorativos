@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { PageShell } from '@/components/page-shell';
 import { StatusAlert } from '@/components/status-alert';
@@ -25,6 +25,7 @@ export default function NewMuralPage() {
   const [formData, setFormData] = useState<CreateMuralDTO>(INITIAL_FORM_DATA);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [resetKey, setResetKey] = useState(0);
+  const isProcessing = useRef(false);
 
   const { status, isSubmitting, submit, setError } = useFormSubmit<CreateMuralDTO>({
     onSubmit: async (data) => {
@@ -61,6 +62,8 @@ export default function NewMuralPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isProcessing.current) return;
+
     // Validations
     if (!isValidGoogleMapsUrl(formData.url_maps)) {
       setError(MESSAGES.VALIDATION.SELECCIONAR_MAPA);
@@ -72,17 +75,19 @@ export default function NewMuralPage() {
       return;
     }
 
-    const imageUrls = await uploadImage(selectedFile);
-    if (!imageUrls) {
-      return; // Error already handled by useImageUpload
-    }
+    isProcessing.current = true;
+    try {
+      const imageUrls = await uploadImage(selectedFile);
+      if (!imageUrls) return;
 
-    // Update form data with image URLs and submit
-    await submit({
-      ...formData,
-      imagen_url: imageUrls.originalUrl,
-      imagen_thumbnail_url: imageUrls.thumbnailUrl,
-    });
+      await submit({
+        ...formData,
+        imagen_url: imageUrls.originalUrl,
+        imagen_thumbnail_url: imageUrls.thumbnailUrl,
+      });
+    } finally {
+      isProcessing.current = false;
+    }
   };
 
   return (
@@ -191,11 +196,11 @@ export default function NewMuralPage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingImage}
             className="px-5 py-2 text-sm font-bold rounded-lg text-white transition-colors"
-            style={{ background: isSubmitting ? '#93c5fd' : '#1e40af' }}
+            style={{ background: isSubmitting || isUploadingImage ? '#93c5fd' : '#1e40af' }}
           >
-            {isSubmitting ? 'Enviando...' : 'Enviar mural →'}
+            {isUploadingImage ? 'Subiendo imagen...' : isSubmitting ? 'Enviando...' : 'Enviar mural →'}
           </button>
         </div>
       </form>
