@@ -109,7 +109,7 @@ export function PageShell({
   const isAdmin = Boolean(adminActions);
 
   return (
-    <div className={`flex flex-col ${fullHeight ? 'h-screen' : 'min-h-screen'} w-full`} style={{ background: '#f8fafc' }}>
+    <div className={`flex flex-col ${fullHeight ? 'h-screen overflow-hidden' : 'min-h-screen'} w-full`} style={{ background: '#f8fafc' }}>
       {/* Header navy */}
       <header style={{ background: '#1e3a5f', flexShrink: 0 }} className="w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
