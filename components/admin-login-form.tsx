@@ -21,7 +21,8 @@ type Values = z.infer<typeof schema>;
 export function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const rawNext = searchParams.get("next") ?? "";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/admin";
   const [busy, setBusy] = useState(false);
 
   const form = useForm<Values>({
