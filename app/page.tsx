@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { StatsBar } from "@/components/stats-bar";
-import { SearchBar } from "@/components/search-bar";
 import { FilterChips } from "@/components/filter-chips";
 import { HomeMapSection } from "@/components/home-map-section";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,8 +40,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <StatsBar stats={stats} />
 
       <main id="main" className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between px-4 md:px-6 py-3 border-b bg-card">
-          <SearchBar />
+        <div className="flex items-center justify-end px-4 md:px-6 py-3 border-b bg-card">
           <FilterChips />
         </div>
 
