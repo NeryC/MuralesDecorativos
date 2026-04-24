@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { MESSAGES } from "@/lib/messages";
@@ -44,7 +44,6 @@ export async function aprobarMuralAction(muralId: string): Promise<ActionResult>
     datosNuevos: { estado: "aprobado" },
   });
 
-  revalidateTag("murales", "default");
   revalidatePath("/admin");
   revalidatePath("/");
   return { success: true };
@@ -75,7 +74,6 @@ export async function rechazarMuralAction(
     datosNuevos: { estado: "rechazado" },
   });
 
-  revalidateTag("murales", "default");
   revalidatePath("/admin");
   revalidatePath("/");
   return { success: true };
@@ -105,7 +103,6 @@ export async function actualizarEstadoMuralAction(
     datosNuevos: { estado },
   });
 
-  revalidateTag("murales", "default");
   revalidatePath("/admin");
   revalidatePath("/");
   return { success: true };
