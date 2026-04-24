@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { MURAL_ESTADOS } from "@/lib/constants";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * POST /api/murales/[id]/report
  * Reporta un mural como eliminado o modificado

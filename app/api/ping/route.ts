@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { apiSuccess, apiError } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * GET /api/ping
  * Endpoint liviano para mantener el proyecto de Supabase activo en el free tier.

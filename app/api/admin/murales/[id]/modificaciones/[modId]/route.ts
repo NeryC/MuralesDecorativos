@@ -4,6 +4,8 @@ import { MURAL_ESTADOS } from "@/lib/constants";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * PATCH /api/admin/murales/[id]/modificaciones/[modId]
  * Aprueba o rechaza una solicitud de modificación específica de un mural.

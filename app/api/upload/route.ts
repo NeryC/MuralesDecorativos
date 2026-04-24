@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MIME_TO_EXT: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],

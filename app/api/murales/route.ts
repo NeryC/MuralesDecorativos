@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { MURAL_ESTADOS } from "@/lib/constants";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * GET /api/murales
  * Obtiene todos los murales aprobados para mostrar en el mapa público

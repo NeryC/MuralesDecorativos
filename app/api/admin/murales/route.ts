@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * GET /api/admin/murales
  * Obtiene TODOS los murales para el panel de administración,

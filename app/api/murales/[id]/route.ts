@@ -5,6 +5,8 @@ import { requireAuth } from "@/lib/auth/server";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 const updateSchema = z.object({
   estado: z.enum(["pendiente", "aprobado", "rechazado"]),
 });
