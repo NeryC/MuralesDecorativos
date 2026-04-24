@@ -58,9 +58,6 @@ export function MapField({
   return (
     <div className={`flex flex-col gap-2 ${className || ''}`}>
       <div className="flex flex-col">
-        <label className="block text-sm font-semibold text-gray-900 mb-1.5 shrink-0">
-          Selecciona la ubicación en el mapa{required && <span className="text-red-600 ml-1">*</span>}
-        </label>
         <div
           ref={containerRef}
           className="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm"

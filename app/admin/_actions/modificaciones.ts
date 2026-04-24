@@ -31,16 +31,9 @@ export async function aprobarModificacionAction(
     return { success: false, error: "Modificación no encontrada" };
   }
 
-  const { error: updateModError } = await supabase
-    .from("mural_modificaciones")
-    .update({ estado_solicitud: "aprobada" })
-    .eq("id", modificacionId);
-
-  if (updateModError) {
-    console.error("[aprobarModificacionAction] update mod:", updateModError);
-    return { success: false, error: MESSAGES.ERROR.PROCESAR_MODIFICACION };
-  }
-
+  // Update mural FIRST: if this fails we leave the modificacion untouched (recoverable).
+  // If we updated the modificacion first and the mural update failed, the state would be
+  // inconsistent (modificacion "aprobada" but mural still has the old image).
   const { error: updateMuralError } = await supabase
     .from("murales")
     .update({
@@ -52,6 +45,16 @@ export async function aprobarModificacionAction(
 
   if (updateMuralError) {
     console.error("[aprobarModificacionAction] update mural:", updateMuralError);
+    return { success: false, error: MESSAGES.ERROR.PROCESAR_MODIFICACION };
+  }
+
+  const { error: updateModError } = await supabase
+    .from("mural_modificaciones")
+    .update({ estado_solicitud: "aprobada" })
+    .eq("id", modificacionId);
+
+  if (updateModError) {
+    console.error("[aprobarModificacionAction] update mod:", updateModError);
     return { success: false, error: MESSAGES.ERROR.PROCESAR_MODIFICACION };
   }
 

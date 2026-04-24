@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -12,6 +12,15 @@ const plex = IBM_Plex_Sans({
   variable: "--font-plex",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://murales-politicos.vercel.app"),
@@ -29,6 +38,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   robots: { index: true, follow: true },
+  referrer: "strict-origin-when-cross-origin",
 };
 
 export default function RootLayout({

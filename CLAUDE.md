@@ -22,7 +22,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 ## Architecture
 
-**Stack:** Next.js 15 (App Router) + React 19 + TypeScript + Supabase (PostgreSQL + Storage + Auth) + Tailwind CSS v4 + Leaflet.js
+**Stack:** Next.js 16 (App Router) + React 19 + TypeScript + Supabase (PostgreSQL + Storage + Auth) + Tailwind CSS v4 + Leaflet.js
 
 **Domain:** Collaborative map for reporting political propaganda murals in Paraguay (Spanish UI, es-PY locale).
 

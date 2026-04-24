@@ -27,10 +27,20 @@ export default function ImageUploader({
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    setPreview(null);
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     setFileName(null);
     if (inputRef.current) inputRef.current.value = "";
   }, [resetKey]);
+
+  // Revoke the current preview URL when it changes or when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const handleFile = useCallback(
     (file: File | null) => {
@@ -49,7 +59,10 @@ export default function ImageUploader({
         return;
       }
       const url = URL.createObjectURL(file);
-      setPreview(url);
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
       setFileName(file.name);
       onFileSelect(file);
     },

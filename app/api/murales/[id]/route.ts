@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth/server';
 import { registrarAuditoria } from '@/lib/auditoria';
 import { apiError, apiSuccess } from '@/lib/api-response';
+
+const updateSchema = z.object({
+  estado: z.enum(['pendiente', 'aprobado', 'rechazado']),
+});
 
 /**
  * GET /api/murales/[id]
@@ -46,13 +52,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (authCheck.error) return authCheck.error;
+    const user = authCheck.user;
+
     const { id } = await params;
     const body = await request.json();
-    const { estado } = body;
 
-    if (!estado) {
-      return apiError('El campo estado es requerido', 400);
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError('Body inválido', 400);
     }
+    const { estado } = parsed.data;
 
     const supabase = await createClient();
 
@@ -79,22 +90,15 @@ export async function PATCH(
       return apiError('Mural no encontrado', 404);
     }
 
-    // Registrar en auditoría (intentará obtener el usuario si está autenticado)
-    const referer = request.headers.get('referer');
-    const isAdminRequest = referer?.includes('/admin');
-
-    let auditoriaOk = true;
-    if (isAdminRequest) {
-      const accion = estado === 'aprobado' ? 'aprobar_mural' : estado === 'rechazado' ? 'rechazar_mural' : 'actualizar_estado';
-      auditoriaOk = await registrarAuditoria({
-        accion,
-        entidadTipo: 'mural',
-        entidadId: id,
-        datosAnteriores: muralAnterior ? { estado: muralAnterior.estado } : undefined,
-        datosNuevos: { estado },
-        comentario: `Estado del mural "${muralAnterior?.nombre || id}" actualizado a ${estado}`,
-      });
-    }
+    const accion = estado === 'aprobado' ? 'aprobar_mural' : estado === 'rechazado' ? 'rechazar_mural' : 'actualizar_estado';
+    const auditoriaOk = await registrarAuditoria({
+      accion,
+      entidadTipo: 'mural',
+      entidadId: id,
+      datosAnteriores: muralAnterior ? { estado: muralAnterior.estado } : undefined,
+      datosNuevos: { estado },
+      comentario: `Estado del mural "${muralAnterior?.nombre || id}" actualizado a ${estado} por ${user.email}`,
+    });
 
     const responseBody = auditoriaOk
       ? { success: true, data }

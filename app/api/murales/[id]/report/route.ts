@@ -82,10 +82,15 @@ export async function POST(
       }
 
       // Mark mural as pending admin review
-      await supabase
+      const { error: updError } = await supabase
         .from('murales')
         .update({ estado: 'modificado_pendiente' })
         .eq('id', muralActual.id);
+
+      if (updError) {
+        console.error('[report/eliminacion]', updError);
+        return apiError('Error al registrar el reporte de eliminación', 500);
+      }
 
       return apiSuccess({ success: true, data });
     }
