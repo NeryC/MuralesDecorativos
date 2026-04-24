@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DEFAULT_COORDINATES } from '@/lib/constants';
-import { generateGoogleMapsUrl } from '@/lib/utils';
+import { generateGoogleMapsUrl } from '@/lib/maps';
 
 interface MapPickerProps {
   onLocationSelect: (url: string, lat: number, lng: number) => void;

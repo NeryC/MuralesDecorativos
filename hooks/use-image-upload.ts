@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { compressImage, uploadImageWithThumbnail } from '@/lib/utils';
+import { compressImage } from '@/lib/compression';
+import { uploadImageWithThumbnail } from '@/lib/upload';
 import { IMAGE_COMPRESSION } from '@/lib/constants';
 import { MESSAGES } from '@/lib/messages';
 

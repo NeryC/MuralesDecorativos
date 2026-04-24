@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatting";
 import type { Auditoria } from "@/lib/types";
 
 const accionLabels: Record<string, string> = {

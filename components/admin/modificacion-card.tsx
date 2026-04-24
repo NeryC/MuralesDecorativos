@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ModificacionActions } from "./modificacion-actions";
 import type { ModificacionConMural } from "@/lib/queries/modificaciones";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Map as MapIcon } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatting";
 import { EstadoBadge } from "@/components/estado-badge";
 import { EmptyState } from "@/components/empty-state";
 import { AdminPagination } from "@/components/admin/pagination";

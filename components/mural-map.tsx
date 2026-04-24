@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DEFAULT_COORDINATES } from '@/lib/constants';
-import { extractCoordinates } from '@/lib/utils';
+import { extractCoordinates } from '@/lib/maps';
 import { buildPopupHTML } from '@/lib/map-popup';
 import type { MuralWithModificaciones } from '@/lib/types';
 

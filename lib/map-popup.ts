@@ -1,5 +1,5 @@
 import type { MuralWithModificaciones, MuralModificacion } from '@/lib/types'
-import { escapeHtml } from '@/lib/utils'
+import { escapeHtml } from '@/lib/formatting'
 
 /**
  * Construye el HTML del popup de Leaflet para un mural.
