@@ -1,9 +1,11 @@
-export type MuralEstado = 
-  | 'pendiente' 
-  | 'aprobado' 
-  | 'rechazado' 
-  | 'modificado_pendiente' 
+export type MuralEstado =
+  | 'pendiente'
+  | 'aprobado'
+  | 'rechazado'
+  | 'modificado_pendiente'
   | 'modificado_aprobado';
+
+export type EstadoMural = MuralEstado;
 
 export interface Mural {
   id: string;

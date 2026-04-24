@@ -226,7 +226,7 @@ export default function ModificacionesPage() {
                             <span className="font-medium">Fecha de solicitud:</span>{' '}
                             {formatDate(modificacion.created_at)}
                           </div>
-                          <EstadoBadge estado={modificacion.estado_solicitud} />
+                          <EstadoBadge estado={modificacion.estado_solicitud as import('@/lib/types').EstadoMural} />
                         </div>
 
                         {modificacion.nuevo_comentario && (
