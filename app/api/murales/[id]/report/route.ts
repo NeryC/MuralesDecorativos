@@ -20,9 +20,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nuevo_comentario, nueva_imagen_url, nueva_imagen_thumbnail_url } = body;
+    const { tipo, nuevo_comentario, nueva_imagen_url, nueva_imagen_thumbnail_url } = body;
 
-    if (!nueva_imagen_url) {
+    // For modification reports an image is required; for elimination it is not
+    if (tipo !== 'eliminacion' && !nueva_imagen_url) {
       return apiError('La nueva imagen es requerida', 400);
     }
 
@@ -52,7 +53,44 @@ export async function POST(
       );
     }
 
-    // 3) Registrar una NUEVA solicitud de modificación (no sobreescribimos campos en la tabla de murales)
+    // 3a) Para reportes de eliminación: registrar sin imagen y marcar el mural para revisión
+    if (tipo === 'eliminacion') {
+      const comentarioEliminacion = nuevo_comentario
+        ? `Reporte de eliminación: ${nuevo_comentario}`
+        : 'Reporte de eliminación';
+
+      const { data, error } = await supabase
+        .from('mural_modificaciones')
+        .insert([
+          {
+            mural_id: muralActual.id,
+            nuevo_comentario: comentarioEliminacion,
+            nueva_imagen_url: null,
+            nueva_imagen_thumbnail_url: null,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error reporting mural elimination:', error);
+        return apiError(error.message, 500);
+      }
+
+      if (!data) {
+        return apiError('Mural no encontrado', 404);
+      }
+
+      // Mark mural as pending admin review
+      await supabase
+        .from('murales')
+        .update({ estado: 'modificado_pendiente' })
+        .eq('id', muralActual.id);
+
+      return apiSuccess({ success: true, data });
+    }
+
+    // 3b) Registrar una NUEVA solicitud de modificación (no sobreescribimos campos en la tabla de murales)
     const { data, error } = await supabase
       .from('mural_modificaciones')
       .insert([
