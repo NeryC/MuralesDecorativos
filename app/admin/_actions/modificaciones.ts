@@ -45,8 +45,8 @@ export async function aprobarModificacionAction(
     .from("murales")
     .update({
       estado: "modificado_aprobado",
-      imagen_url: mod.imagen_nueva_url,
-      imagen_thumbnail_url: mod.imagen_nueva_thumbnail_url,
+      imagen_url: mod.nueva_imagen_url,
+      imagen_thumbnail_url: mod.nueva_imagen_thumbnail_url,
     })
     .eq("id", muralId);
 
