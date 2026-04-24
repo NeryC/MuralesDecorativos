@@ -1,228 +1,133 @@
-'use client';
+import type { Metadata } from "next";
+import Link from "next/link";
+import { formatDate } from "@/lib/utils";
+import { SiteHeader } from "@/components/site-header";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminFiltersBar } from "@/components/admin/filters-bar";
+import { AdminPagination } from "@/components/admin/pagination";
+import { MuralRowActions } from "@/components/admin/mural-row-actions";
+import { EstadoBadge } from "@/components/estado-badge";
+import { EmptyState } from "@/components/empty-state";
+import { Map as MapIcon } from "lucide-react";
+import {
+  getAllMurales,
+  countMuralesPendientes,
+  countModificacionesPendientes,
+} from "@/lib/queries/admin-murales";
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { PageShell } from '@/components/page-shell';
-import { FilterButtons } from '@/components/admin/filter-buttons';
-import { MuralRow } from '@/components/admin/mural-row';
-import ImageModal from '@/components/image-modal';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { StatusAlert } from '@/components/status-alert';
-import { MESSAGES } from '@/lib/messages';
-import { useMuralHelpers } from '@/hooks/use-mural-helpers';
-import { useMuralFilters, type FilterType } from '@/hooks/use-mural-filters';
-import { getClientUser } from '@/lib/auth/client';
-import type { AuthUser } from '@/lib/auth/types';
-import { createClient } from '@/lib/supabase/client';
-import type { MuralWithModificaciones } from '@/lib/types';
+export const metadata: Metadata = {
+  title: "Panel admin · Murales",
+  robots: { index: false, follow: false },
+};
 
-export default function AdminPage() {
-  const [murales, setMurales] = useState<MuralWithModificaciones[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterType>('pendiente');
+export const dynamic = "force-dynamic";
 
-  const handleImageClick = useCallback((url: string) => {
-    setSelectedImage(url);
-  }, []);
+type AdminEstado = "pendiente" | "aprobado" | "rechazado" | "modificado_pendiente" | "todos";
 
-  const handleCloseImage = useCallback(() => {
-    setSelectedImage(null);
-  }, []);
-  const [processingModificacion, setProcessingModificacion] = useState<string | null>(null);
-  const [updatingEstado, setUpdatingEstado] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const router = useRouter();
+interface AdminPageProps {
+  searchParams: Promise<{
+    page?: string;
+    estado?: string;
+    q?: string;
+  }>;
+}
 
-  const { getUltimaModificacionPendiente, getImagenAmostrar } = useMuralHelpers(filter);
+const VALID_ESTADOS: AdminEstado[] = ["pendiente", "aprobado", "rechazado", "modificado_pendiente", "todos"];
 
-  const fetchMurales = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/murales');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      // Asegurar que siempre sea un array
-      setMurales(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching murales:', error);
-      setMurales([]); // Asegurar que sea un array vacío en caso de error
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+export default async function AdminPage({ searchParams }: AdminPageProps) {
+  const params = await searchParams;
+  const page = params.page ? parseInt(params.page, 10) : 1;
 
-  const checkAuth = useCallback(async () => {
-    const currentUser = await getClientUser();
-    if (!currentUser) {
-      router.push('/admin/login');
-      return;
-    }
-    setUser(currentUser);
-    setAuthLoading(false);
-    fetchMurales();
-  }, [router, fetchMurales]);
+  const estadoCandidate = params.estado as AdminEstado | undefined;
+  const estado: AdminEstado = estadoCandidate && VALID_ESTADOS.includes(estadoCandidate)
+    ? estadoCandidate
+    : "pendiente";
 
-  useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo ejecutar una vez al montar
-
-  const handleLogout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/admin/login');
-    router.refresh();
-  }, [router]);
-
-  const handleProcesarModificacion = useCallback(
-    async (muralId: string, modificacionId: string, action: 'approve' | 'reject') => {
-      const key = `${muralId}-${modificacionId}`;
-      setProcessingModificacion(key);
-      try {
-        const response = await fetch(
-          `/api/admin/murales/${muralId}/modificaciones/${modificacionId}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action }),
-          }
-        );
-
-        if (response.ok) {
-          // Forzar actualización de los datos
-          await fetchMurales();
-          
-          // Si se aprobó, redirigir al mapa después de unos segundos
-          if (action === 'approve') {
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 3000);
-          }
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          setErrorMessage(errorData.error || MESSAGES.ERROR.PROCESAR_MODIFICACION);
-        }
-      } catch (error) {
-        console.error('Error processing modification:', error);
-        setErrorMessage(MESSAGES.ERROR.PROCESAR_MODIFICACION);
-      } finally {
-        setProcessingModificacion(null);
-      }
-    },
-    [fetchMurales]
-  );
-
-  const updateEstado = useCallback(
-    async (id: string, estado: string) => {
-      setUpdatingEstado(id);
-      try {
-        const response = await fetch(`/api/murales/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado }),
-        });
-
-        if (response.ok) {
-          await fetchMurales();
-        } else {
-          setErrorMessage(MESSAGES.ERROR.ACTUALIZAR_ESTADO);
-        }
-      } catch (error) {
-        console.error('Error updating estado:', error);
-        setErrorMessage(MESSAGES.ERROR.ACTUALIZAR_ESTADO);
-      } finally {
-        setUpdatingEstado(null);
-      }
-    },
-    [fetchMurales]
-  );
-
-  const { filteredMurales, counts } = useMuralFilters(murales, filter);
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <LoadingSpinner size="md" text="Cargando..." />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null; // Se redirigirá al login
-  }
+  const [pagedMurales, pendingMurales, pendingMods] = await Promise.all([
+    getAllMurales({ page, estado, q: params.q }),
+    countMuralesPendientes(),
+    countModificacionesPendientes(),
+  ]);
 
   return (
-    <PageShell
-      title="Murales Políticos"
-      subtitle="Panel de administración"
-      scrollableMain
-      showMapButton={true}
-      adminActions={{
-        onLogout: handleLogout,
-        showAuditoria: true,
-        showBackToPanel: false,
-      }}
-    >
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
-        {errorMessage && (
-          <StatusAlert type="error" onClose={() => setErrorMessage(null)}>
-            {errorMessage}
-          </StatusAlert>
-        )}
-        <div>
-          <FilterButtons
-            filter={filter}
-            onFilterChange={setFilter}
-            pendienteCount={counts.pendiente}
-            modificadoPendienteCount={counts.modificadoPendiente}
-            totalCount={counts.total}
-          />
+    <div className="flex min-h-dvh">
+      <AdminSidebar
+        pendingMuralesCount={pendingMurales}
+        pendingModificacionesCount={pendingMods}
+      />
+      <div className="flex-1 flex flex-col">
+        <SiteHeader />
+        <main id="main" className="flex-1 p-4 md:p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold">Murales</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Gestión de murales registrados.
+            </p>
+          </div>
 
-          {filteredMurales.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No hay murales en esta categoría.</p>
+          <div className="mb-4">
+            <AdminFiltersBar />
+          </div>
+
+          {pagedMurales.data.length === 0 ? (
+            <EmptyState
+              icon={MapIcon}
+              title="Sin resultados"
+              description="No hay murales que coincidan con los filtros."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100">
+            <div className="overflow-x-auto rounded-md border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-muted-foreground sticky top-0">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nombre</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Candidato</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Link del Mapa</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Imagen</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Comentario</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Fecha</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Acciones / Solicitudes</th>
+                    <th className="px-4 py-3 text-left font-medium">Nombre</th>
+                    <th className="px-4 py-3 text-left font-medium">Candidato</th>
+                    <th className="px-4 py-3 text-left font-medium">Ubicación</th>
+                    <th className="px-4 py-3 text-left font-medium">Estado</th>
+                    <th className="px-4 py-3 text-left font-medium">Fecha</th>
+                    <th className="px-4 py-3 text-left font-medium">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredMurales.map((mural) => (
-                    <MuralRow
-                      key={mural.id}
-                      mural={mural}
-                      filter={filter}
-                      onImageClick={handleImageClick}
-                      onUpdateEstado={updateEstado}
-                      onProcesarModificacion={handleProcesarModificacion}
-                      getUltimaModificacionPendiente={getUltimaModificacionPendiente}
-                      getImagenAmostrar={getImagenAmostrar}
-                      isProcessingModificacion={processingModificacion !== null}
-                      isUpdatingEstado={updatingEstado === mural.id}
-                      processingModificacionKey={processingModificacion}
-                    />
+                <tbody className="divide-y">
+                  {pagedMurales.data.map((m) => (
+                    <tr key={m.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-medium">{m.nombre}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{m.candidato ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={m.url_maps}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-accent hover:underline"
+                        >
+                          Ver en Maps
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <EstadoBadge estado={m.estado} />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">
+                        {formatDate(m.created_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {m.estado === "pendiente" && <MuralRowActions muralId={m.id} />}
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
 
-        <ImageModal imageUrl={selectedImage} onClose={handleCloseImage} />
+          <AdminPagination
+            page={pagedMurales.page}
+            totalPages={pagedMurales.totalPages}
+            total={pagedMurales.total}
+            baseSearchParams={{ estado: params.estado, q: params.q }}
+            basePath="/admin"
+          />
+        </main>
       </div>
-    </PageShell>
+    </div>
   );
 }
