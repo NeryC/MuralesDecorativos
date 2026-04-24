@@ -1,24 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminClient } from "@/lib/auth/server";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { MESSAGES } from "@/lib/messages";
 import type { ActionResult } from "./murales";
-
-async function requireAdminClient() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-  return supabase;
-}
 
 export async function aprobarModificacionAction(
   muralId: string,
   modificacionId: string,
 ): Promise<ActionResult> {
-  const supabase = await requireAdminClient();
-  if (!supabase) return { success: false, error: "No autenticado" };
+  const auth = await requireAdminClient();
+  if (!auth.ok) return { success: false, error: auth.error };
+  const { supabase } = auth;
 
   const { data: mod, error: modError } = await supabase
     .from("mural_modificaciones")
@@ -79,8 +73,9 @@ export async function rechazarModificacionAction(
   modificacionId: string,
   motivo: string,
 ): Promise<ActionResult> {
-  const supabase = await requireAdminClient();
-  if (!supabase) return { success: false, error: "No autenticado" };
+  const auth = await requireAdminClient();
+  if (!auth.ok) return { success: false, error: auth.error };
+  const { supabase } = auth;
 
   const { error } = await supabase
     .from("mural_modificaciones")

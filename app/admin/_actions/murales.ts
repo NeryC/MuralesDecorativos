@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminClient } from "@/lib/auth/server";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { MESSAGES } from "@/lib/messages";
 
@@ -10,18 +10,6 @@ export type ActionResult =
   | { success: false; error: string };
 
 type EstadoMural = "pendiente" | "aprobado" | "rechazado";
-
-async function requireAdminClient(): Promise<
-  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>> }
-  | { ok: false; error: string }
-> {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    return { ok: false, error: "No autenticado" };
-  }
-  return { ok: true, supabase };
-}
 
 export async function aprobarMuralAction(muralId: string): Promise<ActionResult> {
   const auth = await requireAdminClient();

@@ -2,6 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { AuthUser } from './types';
 
+export type RequireAdminResult =
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; userEmail: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Verifica si el usuario está autenticado y devuelve el cliente Supabase y el usuario.
+ * Usar en Server Actions y rutas de API que requieren rol admin.
+ */
+export async function requireAdminClient(): Promise<RequireAdminResult> {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return { ok: false, error: "No autenticado" };
+  return { ok: true, supabase, userId: user.id, userEmail: user.email ?? null };
+}
+
 /**
  * Verifica si el usuario está autenticado y devuelve el usuario
  * @returns Usuario autenticado o null
