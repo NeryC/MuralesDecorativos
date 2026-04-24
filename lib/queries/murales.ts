@@ -35,10 +35,13 @@ export async function getMuralesAprobados(
   }
 
   if (filters.q && filters.q.trim()) {
-    const term = `%${filters.q.trim()}%`;
-    query = query.or(
-      `nombre.ilike.${term},candidato.ilike.${term},comentario.ilike.${term}`,
-    );
+    const safe = filters.q.trim().replace(/[,()*"\\]/g, " ").slice(0, 100);
+    if (safe.trim()) {
+      const term = `%${safe}%`;
+      query = query.or(
+        `nombre.ilike.${term},candidato.ilike.${term},comentario.ilike.${term}`,
+      );
+    }
   }
 
   const { data, error } = await query;
