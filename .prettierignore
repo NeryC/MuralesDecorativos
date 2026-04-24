@@ -1,0 +1,10 @@
+.next
+node_modules
+.vercel
+public
+coverage
+.tmp
+*.md
+package.json
+yarn.lock
+components/ui
