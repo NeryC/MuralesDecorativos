@@ -39,8 +39,10 @@ export function AdminFiltersBar() {
   );
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-      <SearchBar />
+    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+      <div className="flex-1 sm:max-w-md">
+        <SearchBar />
+      </div>
       <Select value={estado} onValueChange={setEstado}>
         <SelectTrigger className="w-full sm:w-48">
           <SelectValue placeholder="Filtrar por estado" />
