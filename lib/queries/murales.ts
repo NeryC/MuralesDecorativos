@@ -20,7 +20,7 @@ export async function getMuralesAprobados(
       *,
       mural_modificaciones (*)
     `)
-    .order("fecha_creacion", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (filters.estado === "aprobado") {
     query = query.eq("estado", "aprobado");
