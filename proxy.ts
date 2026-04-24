@@ -82,7 +82,18 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Admin guard — protect /admin/* except /admin/login
+  const { pathname } = request.nextUrl;
+  const isAdminPath =
+    pathname.startsWith('/admin') && !pathname.startsWith('/admin/login');
+
+  if (isAdminPath && !user) {
+    const redirectUrl = new URL('/admin/login', request.url);
+    redirectUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return response;
 }
