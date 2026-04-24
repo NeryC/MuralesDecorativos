@@ -47,7 +47,12 @@ export async function getMuralesAprobados(
   const { data, error } = await query;
 
   if (error) {
-    console.error("[getMuralesAprobados]", error);
+    console.error("[getMuralesAprobados]", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
     return [];
   }
 
@@ -66,7 +71,12 @@ export async function getMuralById(
     .single();
 
   if (error) {
-    console.error("[getMuralById]", error);
+    console.error("[getMuralById]", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
     return null;
   }
 
