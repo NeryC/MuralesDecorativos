@@ -39,8 +39,10 @@ export function useImageUpload({ onError }: UseImageUploadOptions = {}): UseImag
         ]);
 
         // Convert Blobs to Files
-        const originalFile = new File([compressedOriginal], 'original.jpg', { type: 'image/jpeg' });
-        const thumbnailFile = new File([compressedThumbnail], 'thumbnail.jpg', { type: 'image/jpeg' });
+        const origExt = compressedOriginal.type.split('/')[1] || 'webp';
+        const thumbExt = compressedThumbnail.type.split('/')[1] || 'webp';
+        const originalFile = new File([compressedOriginal], `original.${origExt}`, { type: compressedOriginal.type });
+        const thumbnailFile = new File([compressedThumbnail], `thumbnail.${thumbExt}`, { type: compressedThumbnail.type });
 
         // Upload images
         const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
