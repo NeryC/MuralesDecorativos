@@ -103,5 +103,6 @@ export async function rechazarModificacionAction(
 
   revalidatePath("/admin");
   revalidatePath("/admin/modificaciones");
+  revalidatePath("/");
   return { success: true };
 }
