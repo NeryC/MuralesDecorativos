@@ -1,7 +1,6 @@
 'use client';
 
-import { memo, useState, useEffect, useCallback } from 'react';
-import ReactModal from 'react-modal';
+import { memo, useState, useEffect, useCallback, useRef } from 'react';
 
 interface ImageModalProps {
   imageUrl: string | null;
@@ -10,13 +9,34 @@ interface ImageModalProps {
 
 function ImageModalComponent({ imageUrl, onClose }: ImageModalProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const isOpen = !!imageUrl;
+  const backdropRef = useRef<HTMLDivElement>(null);
 
-  // Reset loading state when imageUrl changes
   useEffect(() => {
     if (imageUrl) {
       setIsLoading(true);
     }
+  }, [imageUrl]);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!imageUrl) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [imageUrl, onClose]);
+
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (imageUrl) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [imageUrl]);
 
   const handleImageLoad = useCallback(() => {
@@ -27,35 +47,35 @@ function ImageModalComponent({ imageUrl, onClose }: ImageModalProps) {
     setIsLoading(false);
   }, []);
 
-  if (!isOpen) return null;
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === backdropRef.current) onClose();
+    },
+    [onClose],
+  );
+
+  if (!imageUrl) return null;
 
   return (
-    <ReactModal
-      isOpen={isOpen}
-      onRequestClose={onClose}
-      shouldCloseOnOverlayClick
-      shouldCloseOnEsc
-      overlayClassName="image-modal-overlay"
-      className="image-modal-content"
-      ariaHideApp={false}
+    <div
+      ref={backdropRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Imagen del mural"
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
     >
-      <div className="relative flex items-center justify-center min-h-[200px] w-full">
+      <div className="relative flex items-center justify-center min-h-[200px] w-full max-w-5xl mx-4">
         {isLoading && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center rounded-lg z-50"
-            style={{
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            }}
-          >
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg z-50 bg-white">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-sm font-medium text-gray-700">Cargando imagen...</p>
             </div>
           </div>
         )}
         <img
-          src={imageUrl ?? undefined}
+          src={imageUrl}
           alt="Mural"
           className={`max-w-full max-h-[90vh] rounded-lg transition-opacity duration-300 ${
             isLoading ? 'opacity-0' : 'opacity-100'
@@ -64,7 +84,7 @@ function ImageModalComponent({ imageUrl, onClose }: ImageModalProps) {
           onError={handleImageError}
         />
       </div>
-    </ReactModal>
+    </div>
   );
 }
 
