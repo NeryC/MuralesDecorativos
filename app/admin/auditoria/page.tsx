@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import { ClipboardList } from "lucide-react";
+import { Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { AuditoriaTable } from "@/components/admin/auditoria-table";
-import { AdminPagination } from "@/components/admin/pagination";
-import { EmptyState } from "@/components/empty-state";
-import { getAuditoria } from "@/lib/queries/auditoria";
-import { countMuralesPendientes, countModificacionesPendientes } from "@/lib/queries/admin-murales";
+import {
+  AuditoriaSection,
+  AuditoriaSkeleton,
+} from "@/components/admin/auditoria-section";
+import {
+  countMuralesPendientes,
+  countModificacionesPendientes,
+} from "@/lib/queries/admin-murales";
 import type { AccionAuditoria } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -32,15 +35,17 @@ export default async function AuditoriaPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = params.page ? parseInt(params.page, 10) : 1;
 
-  const accion = params.accion && VALID_ACCIONES.includes(params.accion as AccionAuditoria)
-    ? (params.accion as AccionAuditoria)
-    : undefined;
+  const accion =
+    params.accion && VALID_ACCIONES.includes(params.accion as AccionAuditoria)
+      ? (params.accion as AccionAuditoria)
+      : undefined;
 
-  const [paged, pendingMurales, pendingMods] = await Promise.all([
-    getAuditoria({ page, accion }),
+  const [pendingMurales, pendingMods] = await Promise.all([
     countMuralesPendientes(),
     countModificacionesPendientes(),
   ]);
+
+  const suspenseKey = `aud-${page}-${accion ?? ""}`;
 
   return (
     <div className="flex min-h-dvh">
@@ -58,23 +63,13 @@ export default async function AuditoriaPage({ searchParams }: PageProps) {
             </p>
           </div>
 
-          {paged.data.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
-              title="Sin registros"
-              description="Todavía no hay acciones registradas."
+          <Suspense key={suspenseKey} fallback={<AuditoriaSkeleton />}>
+            <AuditoriaSection
+              page={page}
+              accion={accion}
+              rawAccionParam={params.accion}
             />
-          ) : (
-            <AuditoriaTable registros={paged.data} />
-          )}
-
-          <AdminPagination
-            page={paged.page}
-            totalPages={paged.totalPages}
-            total={paged.total}
-            baseSearchParams={{ accion: params.accion }}
-            basePath="/admin/auditoria"
-          />
+          </Suspense>
         </main>
       </div>
     </div>

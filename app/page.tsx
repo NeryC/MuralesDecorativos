@@ -1,15 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { StatsBar } from "@/components/stats-bar";
 import { SearchBar } from "@/components/search-bar";
 import { FilterChips } from "@/components/filter-chips";
-import { HomeMapClient } from "@/components/home-map-client";
-import {
-  getMuralesAprobados,
-  getMuralesStats,
-  type EstadoFilter,
-} from "@/lib/queries/murales";
+import { HomeMapSection } from "@/components/home-map-section";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getMuralesStats, type EstadoFilter } from "@/lib/queries/murales";
 import type { Metadata } from "next";
 
 export const revalidate = 60;
@@ -33,11 +31,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const estado = (params.estado ?? "todos") as EstadoFilter;
+  const stats = await getMuralesStats();
 
-  const [murales, stats] = await Promise.all([
-    getMuralesAprobados({ q: params.q, estado }),
-    getMuralesStats(),
-  ]);
+  const suspenseKey = `${params.q ?? ""}-${estado}-${params.highlight ?? ""}`;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -51,7 +47,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <div className="flex-1 relative">
-          <HomeMapClient murales={murales} highlightId={params.highlight} />
+          <Suspense key={suspenseKey} fallback={<Skeleton className="absolute inset-0 rounded-none" />}>
+            <HomeMapSection q={params.q} estado={estado} highlightId={params.highlight} />
+          </Suspense>
         </div>
       </main>
 

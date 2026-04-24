@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import { GitCompare } from "lucide-react";
+import { Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { ModificacionCard } from "@/components/admin/modificacion-card";
-import { AdminPagination } from "@/components/admin/pagination";
-import { EmptyState } from "@/components/empty-state";
-import { getModificacionesPendientes } from "@/lib/queries/modificaciones";
-import { countMuralesPendientes, countModificacionesPendientes } from "@/lib/queries/admin-murales";
+import {
+  ModificacionesSection,
+  ModificacionesSkeleton,
+} from "@/components/admin/modificaciones-section";
+import {
+  countMuralesPendientes,
+  countModificacionesPendientes,
+} from "@/lib/queries/admin-murales";
 
 export const metadata: Metadata = {
   title: "Modificaciones pendientes · Admin",
@@ -23,8 +26,7 @@ export default async function ModificacionesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = params.page ? parseInt(params.page, 10) : 1;
 
-  const [paged, pendingMurales, pendingMods] = await Promise.all([
-    getModificacionesPendientes(page),
+  const [pendingMurales, pendingMods] = await Promise.all([
     countMuralesPendientes(),
     countModificacionesPendientes(),
   ]);
@@ -45,27 +47,9 @@ export default async function ModificacionesPage({ searchParams }: PageProps) {
             </p>
           </div>
 
-          {paged.data.length === 0 ? (
-            <EmptyState
-              icon={GitCompare}
-              title="Sin modificaciones pendientes"
-              description="Volvé más tarde para revisar nuevas propuestas."
-            />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {paged.data.map((m) => (
-                <ModificacionCard key={m.id} modificacion={m} />
-              ))}
-            </div>
-          )}
-
-          <AdminPagination
-            page={paged.page}
-            totalPages={paged.totalPages}
-            total={paged.total}
-            baseSearchParams={{}}
-            basePath="/admin/modificaciones"
-          />
+          <Suspense key={`mods-${page}`} fallback={<ModificacionesSkeleton />}>
+            <ModificacionesSection page={page} />
+          </Suspense>
         </main>
       </div>
     </div>
