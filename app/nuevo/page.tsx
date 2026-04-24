@@ -4,7 +4,8 @@ import { MuralForm } from "@/components/mural-form";
 
 export const metadata: Metadata = {
   title: "Registrar mural",
-  description: "Registrá un mural de propaganda política en Paraguay. Será revisado antes de publicarse.",
+  description:
+    "Registrá un mural de propaganda política en Paraguay. Será revisado antes de publicarse.",
   robots: { index: true, follow: true },
 };
 

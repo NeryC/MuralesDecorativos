@@ -11,11 +11,7 @@ interface AuditoriaSectionProps {
   rawAccionParam?: string;
 }
 
-export async function AuditoriaSection({
-  page,
-  accion,
-  rawAccionParam,
-}: AuditoriaSectionProps) {
+export async function AuditoriaSection({ page, accion, rawAccionParam }: AuditoriaSectionProps) {
   const paged = await getAuditoria({ page, accion });
 
   if (paged.data.length === 0) {

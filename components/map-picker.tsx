@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { DEFAULT_COORDINATES } from '@/lib/constants';
-import { generateGoogleMapsUrl } from '@/lib/maps';
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { DEFAULT_COORDINATES } from "@/lib/constants";
+import { generateGoogleMapsUrl } from "@/lib/maps";
 
 interface MapPickerProps {
   onLocationSelect: (url: string, lat: number, lng: number) => void;
@@ -27,14 +27,15 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
   }, []);
 
   useEffect(() => {
-    if (!isClient || typeof window === 'undefined') return;
+    if (!isClient || typeof window === "undefined") return;
 
     // Fix Leaflet default icon issue in Next.js
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconRetinaUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     });
 
     // Initialize map with retry logic
@@ -42,7 +43,7 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
       if (mapRef.current) return;
 
       // Wait for DOM to be ready
-      const mapContainer = document.getElementById('map-picker');
+      const mapContainer = document.getElementById("map-picker");
       if (!mapContainer) {
         // Retry after a short delay
         setTimeout(initializeMap, 100);
@@ -56,21 +57,18 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
       }
 
       const zoom = initialZoom ?? DEFAULT_COORDINATES.zoom;
-      
+
       try {
-        mapRef.current = L.map('map-picker', {
+        mapRef.current = L.map("map-picker", {
           preferCanvas: false,
           scrollWheelZoom: false,
-        }).setView(
-          [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
-          zoom
-        );
+        }).setView([DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng], zoom);
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(mapRef.current);
-        
+
         // Invalidate size multiple times to ensure map renders correctly
         const invalidateSize = () => {
           if (mapRef.current) {
@@ -91,7 +89,7 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
         });
 
         // Try to get user location
-        if ('geolocation' in navigator) {
+        if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition((position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
@@ -125,9 +123,9 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
           onLocationSelectRef.current(url, lat, lng);
         };
 
-        mapRef.current.on('click', handleMapClick);
+        mapRef.current.on("click", handleMapClick);
       } catch (error) {
-        console.error('Error initializing map:', error);
+        console.error("Error initializing map:", error);
       }
     };
 
@@ -136,7 +134,7 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
 
     return () => {
       if (mapRef.current) {
-        mapRef.current.off('click');
+        mapRef.current.off("click");
         mapRef.current.remove();
         mapRef.current = null;
         markerRef.current = null;
@@ -154,14 +152,18 @@ export default function MapPicker({ onLocationSelect, initialZoom }: MapPickerPr
   }, [isClient]);
 
   if (!isClient) {
-    return <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">Cargando mapa...</div>;
+    return (
+      <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">
+        Cargando mapa...
+      </div>
+    );
   }
 
   return (
-    <div 
-      id="map-picker" 
-      className="w-full max-w-full rounded-md border border-gray-300 box-border overflow-hidden" 
-      style={{ height: '100%', minHeight: '450px' }}
+    <div
+      id="map-picker"
+      className="w-full max-w-full rounded-md border border-gray-300 box-border overflow-hidden"
+      style={{ height: "100%", minHeight: "450px" }}
     />
   );
 }

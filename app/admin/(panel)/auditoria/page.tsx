@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import {
-  AuditoriaSection,
-  AuditoriaSkeleton,
-} from "@/components/admin/auditoria-section";
+import { AuditoriaSection, AuditoriaSkeleton } from "@/components/admin/auditoria-section";
 import type { AccionAuditoria } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -46,11 +43,7 @@ export default async function AuditoriaPage({ searchParams }: PageProps) {
       </div>
 
       <Suspense key={suspenseKey} fallback={<AuditoriaSkeleton />}>
-        <AuditoriaSection
-          page={page}
-          accion={accion}
-          rawAccionParam={params.accion}
-        />
+        <AuditoriaSection page={page} accion={accion} rawAccionParam={params.accion} />
       </Suspense>
     </>
   );

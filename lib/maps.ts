@@ -12,10 +12,10 @@ export function extractCoordinates(url: string): { lat: number; lng: number } | 
   try {
     const urlObj = new URL(url);
     const params = new URLSearchParams(urlObj.search);
-    const q = params.get('q');
+    const q = params.get("q");
 
     if (q) {
-      const parts = q.split(',');
+      const parts = q.split(",");
       if (parts.length === 2) {
         const lat = parseFloat(parts[0]);
         const lng = parseFloat(parts[1]);

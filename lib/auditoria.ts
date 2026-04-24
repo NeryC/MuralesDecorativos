@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
-import type { AccionAuditoria } from '@/lib/types';
-import { getAuthenticatedUser } from './auth/server';
-import { headers } from 'next/headers';
+import { createClient } from "@/lib/supabase/server";
+import type { AccionAuditoria } from "@/lib/types";
+import { getAuthenticatedUser } from "./auth/server";
+import { headers } from "next/headers";
 
 interface RegistrarAuditoriaParams {
   accion: AccionAuditoria;
-  entidadTipo: 'mural' | 'modificacion';
+  entidadTipo: "mural" | "modificacion";
   entidadId: string;
   datosAnteriores?: Record<string, unknown>;
   datosNuevos?: Record<string, unknown>;
@@ -34,20 +34,20 @@ export async function registrarAuditoria(params: RegistrarAuditoriaParams): Prom
       datos_anteriores: params.datosAnteriores || null,
       datos_nuevos: params.datosNuevos || null,
       comentario: params.comentario || null,
-      ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || null,
-      user_agent: headersList.get('user-agent') || null,
+      ip_address: headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || null,
+      user_agent: headersList.get("user-agent") || null,
     };
 
-    const { error } = await supabase.from('auditoria').insert(auditoriaData);
+    const { error } = await supabase.from("auditoria").insert(auditoriaData);
 
     if (error) {
-      console.error('Error registrando auditoría:', error);
+      console.error("Error registrando auditoría:", error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error inesperado al registrar auditoría:', error);
+    console.error("Error inesperado al registrar auditoría:", error);
     return false;
   }
 }

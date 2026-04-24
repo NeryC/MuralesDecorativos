@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { compressImage } from '@/lib/compression';
-import { uploadImageWithThumbnail } from '@/lib/upload';
-import { IMAGE_COMPRESSION } from '@/lib/constants';
-import { MESSAGES } from '@/lib/messages';
+import { useState, useCallback } from "react";
+import { compressImage } from "@/lib/compression";
+import { uploadImageWithThumbnail } from "@/lib/upload";
+import { IMAGE_COMPRESSION } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 interface UseImageUploadOptions {
   onError?: (error: string) => void;
@@ -29,36 +29,43 @@ export function useImageUpload({ onError }: UseImageUploadOptions = {}): UseImag
             file,
             IMAGE_COMPRESSION.maxWidth,
             IMAGE_COMPRESSION.maxHeight,
-            IMAGE_COMPRESSION.quality
+            IMAGE_COMPRESSION.quality,
           ),
           compressImage(
             file,
             IMAGE_COMPRESSION.thumbnailMaxWidth,
             IMAGE_COMPRESSION.thumbnailMaxHeight,
-            IMAGE_COMPRESSION.thumbnailQuality
+            IMAGE_COMPRESSION.thumbnailQuality,
           ),
         ]);
 
         // Convert Blobs to Files
-        const origExt = compressedOriginal.type.split('/')[1] || 'webp';
-        const thumbExt = compressedThumbnail.type.split('/')[1] || 'webp';
-        const originalFile = new File([compressedOriginal], `original.${origExt}`, { type: compressedOriginal.type });
-        const thumbnailFile = new File([compressedThumbnail], `thumbnail.${thumbExt}`, { type: compressedThumbnail.type });
+        const origExt = compressedOriginal.type.split("/")[1] || "webp";
+        const thumbExt = compressedThumbnail.type.split("/")[1] || "webp";
+        const originalFile = new File([compressedOriginal], `original.${origExt}`, {
+          type: compressedOriginal.type,
+        });
+        const thumbnailFile = new File([compressedThumbnail], `thumbnail.${thumbExt}`, {
+          type: compressedThumbnail.type,
+        });
 
         // Upload images
-        const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(originalFile, thumbnailFile);
+        const { originalUrl, thumbnailUrl } = await uploadImageWithThumbnail(
+          originalFile,
+          thumbnailFile,
+        );
 
         return { originalUrl, thumbnailUrl };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : MESSAGES.ERROR.SUBIR_IMAGEN;
-        console.error('Error uploading image:', error);
+        console.error("Error uploading image:", error);
         onError?.(errorMessage);
         return null;
       } finally {
         setIsUploading(false);
       }
     },
-    [onError]
+    [onError],
   );
 
   return {
@@ -66,4 +73,3 @@ export function useImageUpload({ onError }: UseImageUploadOptions = {}): UseImag
     uploadImage,
   };
 }
-

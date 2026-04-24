@@ -7,12 +7,7 @@ import { AdminPagination } from "@/components/admin/pagination";
 import { MuralRowActions } from "@/components/admin/mural-row-actions";
 import { getAllMurales } from "@/lib/queries/admin-murales";
 
-type AdminEstado =
-  | "pendiente"
-  | "aprobado"
-  | "rechazado"
-  | "modificado_pendiente"
-  | "todos";
+type AdminEstado = "pendiente" | "aprobado" | "rechazado" | "modificado_pendiente" | "todos";
 
 interface MuralesTableSectionProps {
   page: number;
@@ -108,7 +103,10 @@ export function MuralesTableSkeleton() {
     <div className="space-y-2">
       <div className="animate-pulse rounded-md bg-slate-200 dark:bg-slate-800 h-10 w-full" />
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="animate-pulse rounded-md bg-slate-200 dark:bg-slate-800 h-14 w-full" />
+        <div
+          key={i}
+          className="animate-pulse rounded-md bg-slate-200 dark:bg-slate-800 h-14 w-full"
+        />
       ))}
     </div>
   );

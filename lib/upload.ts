@@ -4,14 +4,14 @@
  */
 export async function uploadImage(
   file: File,
-  type: 'original' | 'thumbnail' = 'original'
+  type: "original" | "thumbnail" = "original",
 ): Promise<string> {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', type);
+  formData.append("file", file);
+  formData.append("type", type);
 
-  const response = await fetch('/api/upload', {
-    method: 'POST',
+  const response = await fetch("/api/upload", {
+    method: "POST",
     body: formData,
   });
 
@@ -30,11 +30,11 @@ export async function uploadImage(
  */
 export async function uploadImageWithThumbnail(
   originalFile: File,
-  thumbnailFile: File
+  thumbnailFile: File,
 ): Promise<{ originalUrl: string; thumbnailUrl: string }> {
   const [originalUrl, thumbnailUrl] = await Promise.all([
-    uploadImage(originalFile, 'original'),
-    uploadImage(thumbnailFile, 'thumbnail'),
+    uploadImage(originalFile, "original"),
+    uploadImage(thumbnailFile, "thumbnail"),
   ]);
 
   return { originalUrl, thumbnailUrl };

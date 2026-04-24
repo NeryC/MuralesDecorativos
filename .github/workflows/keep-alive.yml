@@ -3,7 +3,7 @@ name: Keep Supabase Alive
 on:
   schedule:
     # Cada 5 días a las 10:00 UTC (Supabase pausa tras 7 días sin actividad)
-    - cron: '0 10 */5 * *'
+    - cron: "0 10 */5 * *"
   workflow_dispatch: # Permite correrlo manualmente desde GitHub
 
 jobs:

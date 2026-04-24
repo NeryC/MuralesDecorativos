@@ -32,8 +32,7 @@ export const metadata: Metadata = {
     "Mapa colaborativo para registrar y documentar murales de propaganda política en Paraguay.",
   openGraph: {
     title: "Murales Políticos",
-    description:
-      "Mapa colaborativo de murales de propaganda política en Paraguay",
+    description: "Mapa colaborativo de murales de propaganda política en Paraguay",
     locale: "es_PY",
     type: "website",
   },
@@ -41,9 +40,7 @@ export const metadata: Metadata = {
   referrer: "strict-origin-when-cross-origin",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={plex.variable}>
       <body className="font-sans antialiased bg-background text-foreground">

@@ -13,12 +13,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type AdminEstado =
-  | "pendiente"
-  | "aprobado"
-  | "rechazado"
-  | "modificado_pendiente"
-  | "todos";
+type AdminEstado = "pendiente" | "aprobado" | "rechazado" | "modificado_pendiente" | "todos";
 
 interface AdminPageProps {
   searchParams: Promise<{
@@ -42,9 +37,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const estadoCandidate = params.estado as AdminEstado | undefined;
   const estado: AdminEstado =
-    estadoCandidate && VALID_ESTADOS.includes(estadoCandidate)
-      ? estadoCandidate
-      : "pendiente";
+    estadoCandidate && VALID_ESTADOS.includes(estadoCandidate) ? estadoCandidate : "pendiente";
 
   const suspenseKey = `${params.q ?? ""}-${estado}-${page}`;
 
@@ -52,9 +45,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Murales</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Gestión de murales registrados.
-        </p>
+        <p className="text-sm text-muted-foreground mt-0.5">Gestión de murales registrados.</p>
       </div>
 
       <div className="mb-4">

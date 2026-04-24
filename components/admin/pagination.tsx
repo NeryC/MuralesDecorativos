@@ -10,7 +10,11 @@ interface AdminPaginationProps {
   basePath: string;
 }
 
-function buildHref(basePath: string, params: Record<string, string | undefined>, page: number): string {
+function buildHref(
+  basePath: string,
+  params: Record<string, string | undefined>,
+  page: number,
+): string {
   const sp = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {
     if (v) sp.set(k, v);

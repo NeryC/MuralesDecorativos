@@ -32,10 +32,14 @@ export function AuditoriaTable({ registros }: AuditoriaTableProps) {
               <td className="px-4 py-3 whitespace-nowrap tabular-nums text-muted-foreground">
                 {formatDate(r.created_at)}
               </td>
-              <td className="px-4 py-3">{r.usuario_email ?? r.usuario_nombre ?? r.usuario_id ?? "—"}</td>
+              <td className="px-4 py-3">
+                {r.usuario_email ?? r.usuario_nombre ?? r.usuario_id ?? "—"}
+              </td>
               <td className="px-4 py-3 font-medium">{accionLabels[r.accion] ?? r.accion}</td>
               <td className="px-4 py-3 text-muted-foreground">
-                <span className="font-mono text-xs">{r.entidad_tipo}:{r.entidad_id?.slice(0, 8) ?? "—"}</span>
+                <span className="font-mono text-xs">
+                  {r.entidad_tipo}:{r.entidad_id?.slice(0, 8) ?? "—"}
+                </span>
               </td>
               <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate">
                 {r.comentario

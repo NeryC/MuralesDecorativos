@@ -1,21 +1,11 @@
 import type { ReactNode } from "react";
 import { SiteHeader } from "@/components/site-header";
-import {
-  AdminSidebar,
-  AdminMobileNavTrigger,
-} from "@/components/admin/admin-sidebar";
-import {
-  countMuralesPendientes,
-  countModificacionesPendientes,
-} from "@/lib/queries/admin-murales";
+import { AdminSidebar, AdminMobileNavTrigger } from "@/components/admin/admin-sidebar";
+import { countMuralesPendientes, countModificacionesPendientes } from "@/lib/queries/admin-murales";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPanelLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default async function AdminPanelLayout({ children }: { children: ReactNode }) {
   const [pendingMurales, pendingMods] = await Promise.all([
     countMuralesPendientes(),
     countModificacionesPendientes(),
@@ -23,10 +13,7 @@ export default async function AdminPanelLayout({
 
   return (
     <div className="flex min-h-dvh">
-      <AdminSidebar
-        pendingMuralesCount={pendingMurales}
-        pendingModificacionesCount={pendingMods}
-      />
+      <AdminSidebar pendingMuralesCount={pendingMurales} pendingModificacionesCount={pendingMods} />
       <div className="flex-1 flex flex-col min-w-0">
         <SiteHeader
           leading={

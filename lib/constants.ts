@@ -17,9 +17,9 @@ export const IMAGE_COMPRESSION = {
 
 // Estados de murales
 export const MURAL_ESTADOS = {
-  PENDIENTE: 'pendiente',
-  APROBADO: 'aprobado',
-  RECHAZADO: 'rechazado',
-  MODIFICADO_PENDIENTE: 'modificado_pendiente',
-  MODIFICADO_APROBADO: 'modificado_aprobado',
+  PENDIENTE: "pendiente",
+  APROBADO: "aprobado",
+  RECHAZADO: "rechazado",
+  MODIFICADO_PENDIENTE: "modificado_pendiente",
+  MODIFICADO_APROBADO: "modificado_aprobado",
 } as const;

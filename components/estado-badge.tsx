@@ -5,10 +5,7 @@ interface EstadoBadgeProps {
   estado: EstadoMural;
 }
 
-const config: Record<
-  EstadoMural,
-  { label: string; className: string }
-> = {
+const config: Record<EstadoMural, { label: string; className: string }> = {
   pendiente: {
     label: "Pendiente",
     className: "bg-warning/10 text-warning border-warning/30",

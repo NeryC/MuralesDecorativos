@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { createClient } from '@/lib/supabase/client';
-import type { AuthUser } from './types';
+import { createClient } from "@/lib/supabase/client";
+import type { AuthUser } from "./types";
 
 /**
  * Obtiene información del usuario desde el cliente (browser)
@@ -20,12 +20,11 @@ export async function getClientUser(): Promise<AuthUser | null> {
 
     return {
       id: user.id,
-      email: user.email || '',
+      email: user.email || "",
       name: user.user_metadata?.name || user.user_metadata?.full_name || undefined,
     };
   } catch (error) {
-    console.error('Error getting client user:', error);
+    console.error("Error getting client user:", error);
     return null;
   }
 }
-

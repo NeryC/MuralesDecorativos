@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { DEFAULT_COORDINATES } from '@/lib/constants';
-import { extractCoordinates } from '@/lib/maps';
-import { buildPopupHTML } from '@/lib/map-popup';
-import type { MuralWithModificaciones } from '@/lib/types';
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { DEFAULT_COORDINATES } from "@/lib/constants";
+import { extractCoordinates } from "@/lib/maps";
+import { buildPopupHTML } from "@/lib/map-popup";
+import type { MuralWithModificaciones } from "@/lib/types";
 
 interface MuralMapProps {
   murales: MuralWithModificaciones[];
@@ -14,15 +14,15 @@ interface MuralMapProps {
   highlightId?: string;
 }
 
-const RED_ICON = '/marker-icon-red.png';
-const GREEN_ICON = '/marker-icon-green.png';
-const BLUE_ICON = '/marker-icon-blue.png';
-const SHADOW = '/marker-shadow.png';
+const RED_ICON = "/marker-icon-red.png";
+const GREEN_ICON = "/marker-icon-green.png";
+const BLUE_ICON = "/marker-icon-blue.png";
+const SHADOW = "/marker-shadow.png";
 
 function makeIcon(iconUrl: string) {
   return new L.Icon({
     iconUrl,
-    iconRetinaUrl: iconUrl.replace('.png', '-2x.png'),
+    iconRetinaUrl: iconUrl.replace(".png", "-2x.png"),
     shadowUrl: SHADOW,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
@@ -40,25 +40,26 @@ export function MuralMap({ murales, onImageClick, highlightId }: MuralMapProps) 
   }, []);
 
   useEffect(() => {
-    if (!isClient || typeof window === 'undefined') return;
+    if (!isClient || typeof window === "undefined") return;
 
     delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconRetinaUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     });
 
     if (!mapRef.current) {
-      const mapContainer = document.getElementById('mural-map');
+      const mapContainer = document.getElementById("mural-map");
       if (!mapContainer) return;
 
-      mapRef.current = L.map('mural-map').setView(
+      mapRef.current = L.map("mural-map").setView(
         [DEFAULT_COORDINATES.lat, DEFAULT_COORDINATES.lng],
-        13
+        13,
       );
 
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(mapRef.current);
@@ -78,7 +79,7 @@ export function MuralMap({ murales, onImageClick, highlightId }: MuralMapProps) 
     }
 
     // Exponer función global para clicks en imágenes dentro de popups
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       (window as unknown as Record<string, unknown>).openImageModal = (imageUrl: string) => {
         onImageClick?.(imageUrl);
       };
@@ -101,15 +102,15 @@ export function MuralMap({ murales, onImageClick, highlightId }: MuralMapProps) 
       if (!coords || !mapRef.current) return;
 
       const isHighlighted = highlightId === mural.id;
-      const isModifiedAprobado = mural.estado === 'modificado_aprobado';
-      const isAprobado = mural.estado === 'aprobado';
+      const isModifiedAprobado = mural.estado === "modificado_aprobado";
+      const isAprobado = mural.estado === "aprobado";
 
       if (isHighlighted) {
         highlightedCoords = coords;
       }
 
       const modAprobada = mural.mural_modificaciones
-        ?.filter((mod) => mod.estado_solicitud === 'aprobada')
+        ?.filter((mod) => mod.estado_solicitud === "aprobada")
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
       const popupContent = buildPopupHTML(mural, isModifiedAprobado ? modAprobada : undefined);

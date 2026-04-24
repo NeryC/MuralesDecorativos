@@ -129,9 +129,7 @@ export default function ImageUploader({
           )}
         >
           <ImagePlus className="size-8" aria-hidden="true" />
-          <span className="text-sm font-medium">
-            Tocá o arrastrá una imagen
-          </span>
+          <span className="text-sm font-medium">Tocá o arrastrá una imagen</span>
           <span className="text-xs">JPG, PNG o WebP · máx 10 MB</span>
         </button>
       )}

@@ -2,25 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Map,
-  GitCompare,
-  ClipboardList,
-  LogOut,
-  Home,
-  Menu,
-  type LucideIcon,
-} from "lucide-react";
+import { Map, GitCompare, ClipboardList, LogOut, Home, Menu, type LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/client";
 
 interface AdminSidebarProps {
@@ -75,12 +62,7 @@ interface SidebarBodyProps {
   onLogout: () => void;
 }
 
-function SidebarBody({
-  navItems,
-  pathname,
-  onNavigate,
-  onLogout,
-}: SidebarBodyProps) {
+function SidebarBody({ navItems, pathname, onNavigate, onLogout }: SidebarBodyProps) {
   return (
     <>
       <div className="px-4 py-4 border-b border-[hsl(215_25%_20%)]">
@@ -109,10 +91,7 @@ function SidebarBody({
                 {item.label}
               </span>
               {item.badge && item.badge > 0 ? (
-                <Badge
-                  variant="destructive"
-                  className="text-[10px] h-5 px-1.5"
-                >
+                <Badge variant="destructive" className="text-[10px] h-5 px-1.5">
                   {item.badge}
                 </Badge>
               ) : null}
@@ -153,11 +132,7 @@ export function AdminSidebar(props: AdminSidebarProps) {
 
   return (
     <aside className="hidden lg:flex flex-col w-48 bg-[hsl(222_47%_7%)] text-white border-r border-[hsl(215_25%_20%)]">
-      <SidebarBody
-        navItems={navItems}
-        pathname={pathname}
-        onLogout={handleLogout}
-      />
+      <SidebarBody navItems={navItems} pathname={pathname} onLogout={handleLogout} />
     </aside>
   );
 }

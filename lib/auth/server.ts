@@ -1,9 +1,14 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
-import type { AuthUser } from './types';
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import type { AuthUser } from "./types";
 
 export type RequireAdminResult =
-  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; userEmail: string | null }
+  | {
+      ok: true;
+      supabase: Awaited<ReturnType<typeof createClient>>;
+      userId: string;
+      userEmail: string | null;
+    }
   | { ok: false; error: string };
 
 /**
@@ -12,7 +17,10 @@ export type RequireAdminResult =
  */
 export async function requireAdminClient(): Promise<RequireAdminResult> {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
   if (error || !user) return { ok: false, error: "No autenticado" };
   return { ok: true, supabase, userId: user.id, userEmail: user.email ?? null };
 }
@@ -35,11 +43,11 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
 
     return {
       id: user.id,
-      email: user.email || '',
+      email: user.email || "",
       name: user.user_metadata?.name || user.user_metadata?.full_name || undefined,
     };
   } catch (error) {
-    console.error('Error getting authenticated user:', error);
+    console.error("Error getting authenticated user:", error);
     return null;
   }
 }
@@ -49,21 +57,16 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
  * @returns Usuario autenticado o respuesta de error
  */
 export async function requireAuth(): Promise<
-  | { user: AuthUser; error: null }
-  | { user: null; error: NextResponse }
+  { user: AuthUser; error: null } | { user: null; error: NextResponse }
 > {
   const user = await getAuthenticatedUser();
 
   if (!user) {
     return {
       user: null,
-      error: NextResponse.json(
-        { error: 'No autorizado. Debes iniciar sesión.' },
-        { status: 401 }
-      ),
+      error: NextResponse.json({ error: "No autorizado. Debes iniciar sesión." }, { status: 401 }),
     };
   }
 
   return { user, error: null };
 }
-

@@ -16,10 +16,12 @@ export async function getMuralesAprobados(
 
   let query = supabase
     .from("murales")
-    .select(`
+    .select(
+      `
       *,
       mural_modificaciones (*)
-    `)
+    `,
+    )
     .order("created_at", { ascending: false });
 
   if (filters.estado === "aprobado") {
@@ -27,20 +29,17 @@ export async function getMuralesAprobados(
   } else if (filters.estado === "modificado") {
     query = query.in("estado", ["modificado_aprobado", "modificado_pendiente"]);
   } else {
-    query = query.in("estado", [
-      "aprobado",
-      "modificado_aprobado",
-      "modificado_pendiente",
-    ]);
+    query = query.in("estado", ["aprobado", "modificado_aprobado", "modificado_pendiente"]);
   }
 
   if (filters.q && filters.q.trim()) {
-    const safe = filters.q.trim().replace(/[,()*"\\]/g, " ").slice(0, 100);
+    const safe = filters.q
+      .trim()
+      .replace(/[,()*"\\]/g, " ")
+      .slice(0, 100);
     if (safe.trim()) {
       const term = `%${safe}%`;
-      query = query.or(
-        `nombre.ilike.${term},candidato.ilike.${term},comentario.ilike.${term}`,
-      );
+      query = query.or(`nombre.ilike.${term},candidato.ilike.${term},comentario.ilike.${term}`);
     }
   }
 
@@ -59,9 +58,7 @@ export async function getMuralesAprobados(
   return (data ?? []) as MuralWithModificaciones[];
 }
 
-export async function getMuralById(
-  id: string,
-): Promise<MuralWithModificaciones | null> {
+export async function getMuralById(id: string): Promise<MuralWithModificaciones | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -93,22 +90,15 @@ export interface MuralesStats {
 export async function getMuralesStats(): Promise<MuralesStats> {
   const supabase = await createClient();
 
-  const [totalRes, aprobadosRes, pendientesRes, modificadosRes] =
-    await Promise.all([
-      supabase.from("murales").select("id", { count: "exact", head: true }),
-      supabase
-        .from("murales")
-        .select("id", { count: "exact", head: true })
-        .eq("estado", "aprobado"),
-      supabase
-        .from("murales")
-        .select("id", { count: "exact", head: true })
-        .eq("estado", "pendiente"),
-      supabase
-        .from("murales")
-        .select("id", { count: "exact", head: true })
-        .in("estado", ["modificado_aprobado", "modificado_pendiente"]),
-    ]);
+  const [totalRes, aprobadosRes, pendientesRes, modificadosRes] = await Promise.all([
+    supabase.from("murales").select("id", { count: "exact", head: true }),
+    supabase.from("murales").select("id", { count: "exact", head: true }).eq("estado", "aprobado"),
+    supabase.from("murales").select("id", { count: "exact", head: true }).eq("estado", "pendiente"),
+    supabase
+      .from("murales")
+      .select("id", { count: "exact", head: true })
+      .in("estado", ["modificado_aprobado", "modificado_pendiente"]),
+  ]);
 
   return {
     total: totalRes.count ?? 0,

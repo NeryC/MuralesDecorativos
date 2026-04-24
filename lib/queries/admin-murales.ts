@@ -40,7 +40,10 @@ export async function getAllMurales(
   }
 
   if (filters.q && filters.q.trim()) {
-    const safe = filters.q.trim().replace(/[,()*"\\]/g, " ").slice(0, 100);
+    const safe = filters.q
+      .trim()
+      .replace(/[,()*"\\]/g, " ")
+      .slice(0, 100);
     if (safe.trim()) {
       const term = `%${safe}%`;
       query = query.or(`nombre.ilike.${term},candidato.ilike.${term}`);

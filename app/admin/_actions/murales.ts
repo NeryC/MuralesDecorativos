@@ -5,9 +5,7 @@ import { requireAdminClient } from "@/lib/auth/server";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { MESSAGES } from "@/lib/messages";
 
-export type ActionResult =
-  | { success: true }
-  | { success: false; error: string };
+export type ActionResult = { success: true } | { success: false; error: string };
 
 type EstadoMural = "pendiente" | "aprobado" | "rechazado";
 
@@ -37,10 +35,7 @@ export async function aprobarMuralAction(muralId: string): Promise<ActionResult>
   return { success: true };
 }
 
-export async function rechazarMuralAction(
-  muralId: string,
-  motivo: string,
-): Promise<ActionResult> {
+export async function rechazarMuralAction(muralId: string, motivo: string): Promise<ActionResult> {
   const auth = await requireAdminClient();
   if (!auth.ok) return { success: false, error: auth.error };
 
@@ -74,10 +69,7 @@ export async function actualizarEstadoMuralAction(
   const auth = await requireAdminClient();
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const { error } = await auth.supabase
-    .from("murales")
-    .update({ estado })
-    .eq("id", muralId);
+  const { error } = await auth.supabase.from("murales").update({ estado }).eq("id", muralId);
 
   if (error) {
     console.error("[actualizarEstadoMuralAction]", error);

@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
-import { apiSuccess } from '@/lib/api-response';
+import { createClient } from "@/lib/supabase/server";
+import { apiSuccess } from "@/lib/api-response";
 
 /**
  * GET /api/admin/murales
@@ -11,12 +11,12 @@ export async function GET() {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('murales')
-      .select('*, mural_modificaciones(*)')
-      .order('created_at', { ascending: false });
+      .from("murales")
+      .select("*, mural_modificaciones(*)")
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('Error fetching all murales:', error);
+      console.error("Error fetching all murales:", error);
       // Devolver array vacío en lugar de objeto de error para mantener consistencia
       return apiSuccess([]);
     }
@@ -24,7 +24,7 @@ export async function GET() {
     // Asegurar que siempre devolvemos un array
     return apiSuccess(Array.isArray(data) ? data : []);
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error("Unexpected error:", error);
     // Devolver array vacío en caso de error inesperado
     return apiSuccess([]);
   }

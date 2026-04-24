@@ -45,7 +45,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <div className="flex-1 relative">
-          <Suspense key={suspenseKey} fallback={<Skeleton className="absolute inset-0 rounded-none" />}>
+          <Suspense
+            key={suspenseKey}
+            fallback={<Skeleton className="absolute inset-0 rounded-none" />}
+          >
             <HomeMapSection q={params.q} estado={estado} highlightId={params.highlight} />
           </Suspense>
         </div>

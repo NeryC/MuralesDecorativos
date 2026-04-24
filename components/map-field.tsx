@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 
-const MapPicker = dynamic(() => import('@/components/map-picker'), {
+const MapPicker = dynamic(() => import("@/components/map-picker"), {
   ssr: false,
   loading: () => (
     <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">
@@ -34,7 +34,7 @@ export function MapField({
 
   useEffect(() => {
     setIsClient(true);
-    setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    setIsMobile("ontouchstart" in window || navigator.maxTouchPoints > 0);
   }, []);
 
   // Deactivate map when user touches outside
@@ -45,8 +45,8 @@ export function MapField({
         setMapActive(false);
       }
     };
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    return () => document.removeEventListener('touchstart', handleTouchStart);
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    return () => document.removeEventListener("touchstart", handleTouchStart);
   }, [isMobile, mapActive]);
 
   const handleLocationSelect = (url: string, lat?: number, lng?: number) => {
@@ -56,14 +56,16 @@ export function MapField({
   };
 
   return (
-    <div className={`flex flex-col gap-2 ${className || ''}`}>
+    <div className={`flex flex-col gap-2 ${className || ""}`}>
       <div className="flex flex-col">
         <div
           ref={containerRef}
           className="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm"
-          style={{ height: '400px', minHeight: '400px', position: 'relative' }}
+          style={{ height: "400px", minHeight: "400px", position: "relative" }}
         >
-          {isClient && <MapPicker onLocationSelect={handleLocationSelect} initialZoom={initialZoom} />}
+          {isClient && (
+            <MapPicker onLocationSelect={handleLocationSelect} initialZoom={initialZoom} />
+          )}
 
           {/* Overlay para mobile: requiere tap explícito para interactuar con el mapa */}
           {isMobile && !mapActive && (
@@ -73,21 +75,29 @@ export function MapField({
                 setMapActive(true);
               }}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 inset: 0,
                 zIndex: 1000,
-                background: 'rgba(0,0,0,0.35)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                borderRadius: '8px',
+                background: "rgba(0,0,0,0.35)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                cursor: "pointer",
+                borderRadius: "8px",
               }}
             >
-              <span style={{ fontSize: '28px' }}>✌️</span>
-              <span style={{ color: 'white', fontWeight: 600, fontSize: '14px', textAlign: 'center', padding: '0 16px' }}>
+              <span style={{ fontSize: "28px" }}>✌️</span>
+              <span
+                style={{
+                  color: "white",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  textAlign: "center",
+                  padding: "0 16px",
+                }}
+              >
                 Toca para interactuar con el mapa
               </span>
             </div>
@@ -97,4 +107,3 @@ export function MapField({
     </div>
   );
 }
-

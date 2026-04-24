@@ -93,11 +93,7 @@ export function MuralForm() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="candidato">Candidato (opcional)</Label>
-            <Input
-              id="candidato"
-              placeholder="Ej: Juan Pérez"
-              {...form.register("candidato")}
-            />
+            <Input id="candidato" placeholder="Ej: Juan Pérez" {...form.register("candidato")} />
             {form.formState.errors.candidato && (
               <p role="alert" className="text-sm text-destructive">
                 {form.formState.errors.candidato.message}
@@ -112,9 +108,7 @@ export function MuralForm() {
             <MapField
               key={resetKey}
               value={form.watch("url_maps")}
-              onLocationSelect={(url) =>
-                form.setValue("url_maps", url, { shouldValidate: true })
-              }
+              onLocationSelect={(url) => form.setValue("url_maps", url, { shouldValidate: true })}
               initialZoom={13}
             />
             {form.formState.errors.url_maps && (
@@ -126,11 +120,7 @@ export function MuralForm() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="comentario">Comentario (opcional)</Label>
-            <Textarea
-              id="comentario"
-              rows={4}
-              {...form.register("comentario")}
-            />
+            <Textarea id="comentario" rows={4} {...form.register("comentario")} />
             {form.formState.errors.comentario && (
               <p role="alert" className="text-sm text-destructive">
                 {form.formState.errors.comentario.message}

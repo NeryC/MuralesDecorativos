@@ -6,13 +6,10 @@ import ImageModal from "@/components/image-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MuralWithModificaciones } from "@/lib/types";
 
-const MuralMap = dynamic(
-  () => import("@/components/mural-map").then((m) => m.MuralMap),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="absolute inset-0" />,
-  },
-);
+const MuralMap = dynamic(() => import("@/components/mural-map").then((m) => m.MuralMap), {
+  ssr: false,
+  loading: () => <Skeleton className="absolute inset-0" />,
+});
 
 interface HomeMapClientProps {
   murales: MuralWithModificaciones[];
@@ -32,11 +29,7 @@ export function HomeMapClient({ murales, highlightId }: HomeMapClientProps) {
 
   return (
     <>
-      <MuralMap
-        murales={murales}
-        onImageClick={handleImageClick}
-        highlightId={highlightId}
-      />
+      <MuralMap murales={murales} onImageClick={handleImageClick} highlightId={highlightId} />
       <ImageModal imageUrl={selectedImage} onClose={handleCloseImage} />
     </>
   );

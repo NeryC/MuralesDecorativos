@@ -1,9 +1,9 @@
 export type MuralEstado =
-  | 'pendiente'
-  | 'aprobado'
-  | 'rechazado'
-  | 'modificado_pendiente'
-  | 'modificado_aprobado';
+  | "pendiente"
+  | "aprobado"
+  | "rechazado"
+  | "modificado_pendiente"
+  | "modificado_aprobado";
 
 export type EstadoMural = MuralEstado;
 
@@ -17,13 +17,13 @@ export interface Mural {
   imagen_url: string;
   imagen_thumbnail_url?: string | null;
   estado: MuralEstado;
-  
+
   // Campos para reportes de eliminación/modificación
   nuevo_comentario?: string | null;
   nueva_imagen_url?: string | null;
   nueva_imagen_thumbnail_url?: string | null;
   reportado_at?: string | null;
-  
+
   updated_at: string;
 }
 
@@ -36,7 +36,7 @@ export interface MuralModificacion {
   nueva_imagen_thumbnail_url?: string | null;
   imagen_original_url?: string | null;
   imagen_original_thumbnail_url?: string | null;
-  estado_solicitud: 'pendiente' | 'aprobada' | 'rechazada';
+  estado_solicitud: "pendiente" | "aprobada" | "rechazada";
   procesado_at?: string | null;
   reportado_at?: string | null;
 }
@@ -70,11 +70,11 @@ export interface Coordinates {
 }
 
 export type AccionAuditoria =
-  | 'aprobar_mural'
-  | 'rechazar_mural'
-  | 'aprobar_modificacion'
-  | 'rechazar_modificacion'
-  | 'actualizar_estado';
+  | "aprobar_mural"
+  | "rechazar_mural"
+  | "aprobar_modificacion"
+  | "rechazar_modificacion"
+  | "actualizar_estado";
 
 export interface Auditoria {
   id: string;
@@ -83,7 +83,7 @@ export interface Auditoria {
   usuario_email?: string | null;
   usuario_nombre?: string | null;
   accion: AccionAuditoria;
-  entidad_tipo: 'mural' | 'modificacion';
+  entidad_tipo: "mural" | "modificacion";
   entidad_id: string;
   datos_anteriores?: Record<string, unknown> | null;
   datos_nuevos?: Record<string, unknown> | null;

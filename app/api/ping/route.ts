@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import { apiSuccess, apiError } from '@/lib/api-response'
+import { createClient } from "@/lib/supabase/server";
+import { apiSuccess, apiError } from "@/lib/api-response";
 
 /**
  * GET /api/ping
@@ -8,15 +8,15 @@ import { apiSuccess, apiError } from '@/lib/api-response'
  */
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const { count, error } = await supabase
-      .from('murales')
-      .select('*', { count: 'exact', head: true })
+      .from("murales")
+      .select("*", { count: "exact", head: true });
 
-    if (error) throw error
+    if (error) throw error;
 
-    return apiSuccess({ ok: true, murales: count ?? 0 })
+    return apiSuccess({ ok: true, murales: count ?? 0 });
   } catch {
-    return apiError('ping failed', 500)
+    return apiError("ping failed", 500);
   }
 }

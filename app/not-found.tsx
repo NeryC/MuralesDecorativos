@@ -9,9 +9,7 @@ export default function NotFound() {
         <MapPinX className="size-8 text-muted-foreground" aria-hidden="true" />
       </div>
       <h1 className="text-3xl font-semibold">Página no encontrada</h1>
-      <p className="text-muted-foreground max-w-md">
-        La página que buscás no existe o fue movida.
-      </p>
+      <p className="text-muted-foreground max-w-md">La página que buscás no existe o fue movida.</p>
       <Button asChild>
         <Link href="/">Volver al inicio</Link>
       </Button>

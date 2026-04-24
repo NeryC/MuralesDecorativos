@@ -1,11 +1,6 @@
 "use client";
 import { ErrorView } from "@/components/error-view";
 
-export default function AdminPanelError({
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+export default function AdminPanelError({ reset }: { error: Error; reset: () => void }) {
   return <ErrorView onRetry={reset} />;
 }
