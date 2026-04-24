@@ -10,7 +10,7 @@ const MuralMap = dynamic(
   () => import("@/components/mural-map").then((m) => m.MuralMap),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-full w-full" />,
+    loading: () => <Skeleton className="absolute inset-0" />,
   },
 );
 

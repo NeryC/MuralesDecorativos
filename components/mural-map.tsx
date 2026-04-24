@@ -146,11 +146,11 @@ export function MuralMap({ murales, onImageClick, highlightId }: MuralMapProps) 
 
   if (!isClient) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-slate-50">
-        <p className="text-slate-400 text-sm">Cargando mapa...</p>
+      <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+        <p className="text-muted-foreground text-sm">Cargando mapa...</p>
       </div>
     );
   }
 
-  return <div id="mural-map" className="h-full w-full" style={{ minHeight: '500px' }} />;
+  return <div id="mural-map" className="absolute inset-0" />;
 }
