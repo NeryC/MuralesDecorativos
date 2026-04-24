@@ -1,178 +1,82 @@
-'use client';
+import type { Metadata } from "next";
+import { ClipboardList } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AuditoriaTable } from "@/components/admin/auditoria-table";
+import { AdminPagination } from "@/components/admin/pagination";
+import { EmptyState } from "@/components/empty-state";
+import { getAuditoria } from "@/lib/queries/auditoria";
+import { countMuralesPendientes, countModificacionesPendientes } from "@/lib/queries/admin-murales";
+import type { AccionAuditoria } from "@/lib/types";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { PageShell } from '@/components/page-shell';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { getClientUser } from '@/lib/auth/client';
-import { createClient } from '@/lib/supabase/client';
-import type { Auditoria } from '@/lib/types';
+export const metadata: Metadata = {
+  title: "Auditoría · Admin",
+  robots: { index: false, follow: false },
+};
 
-export default function AuditoriaPage() {
-  const [auditoria, setAuditoria] = useState<Auditoria[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<{ email: string } | null>(null);
-  const router = useRouter();
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+const VALID_ACCIONES: AccionAuditoria[] = [
+  "aprobar_mural",
+  "rechazar_mural",
+  "aprobar_modificacion",
+  "rechazar_modificacion",
+  "actualizar_estado",
+];
 
-  const checkAuth = useCallback(async () => {
-    const currentUser = await getClientUser();
-    if (!currentUser) {
-      router.push('/admin/login');
-      return;
-    }
-    setUser(currentUser);
-    setAuthLoading(false);
-    fetchAuditoria();
-  }, [router]);
-
-  const fetchAuditoria = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/auditoria?limit=200');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setAuditoria(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching auditoria:', error);
-      setAuditoria([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleLogout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/admin/login');
-    router.refresh();
-  }, [router]);
-
-  const formatFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const getAccionLabel = (accion: string) => {
-    const labels: Record<string, string> = {
-      aprobar_mural: 'Aprobar Mural',
-      rechazar_mural: 'Rechazar Mural',
-      aprobar_modificacion: 'Aprobar Modificación',
-      rechazar_modificacion: 'Rechazar Modificación',
-      actualizar_estado: 'Actualizar Estado',
-    };
-    return labels[accion] || accion;
-  };
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <LoadingSpinner size="md" text="Cargando..." />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  return (
-    <PageShell 
-      title="Historial de Cambios" 
-      subtitle="Registro de todas las acciones realizadas en el sistema"
-      scrollableMain
-      showMapButton={true}
-      adminActions={{
-        onLogout: handleLogout,
-        showAuditoria: false,
-        showBackToPanel: true,
-        backToPanelHref: '/admin',
-      }}
-    >
-      <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
-
-        {auditoria.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No hay registros de auditoría.</p>
-        ) : (
-          <div className="overflow-x-auto bg-white rounded-lg shadow">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Fecha/Hora</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Usuario</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Acción</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Entidad</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Cambios</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Comentario</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {auditoria.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {formatFecha(item.created_at)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      <div>
-                        <div className="font-medium">{item.usuario_email || 'Sistema'}</div>
-                        {item.usuario_nombre && (
-                          <div className="text-xs text-gray-500">{item.usuario_nombre}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {getAccionLabel(item.accion)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      <div>
-                        <span className="font-medium capitalize">{item.entidad_tipo}</span>
-                        <div className="text-xs text-gray-500 font-mono">{item.entidad_id.slice(0, 8)}...</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {item.datos_anteriores && item.datos_nuevos ? (
-                        <div className="space-y-1">
-                          {Object.keys(item.datos_nuevos).map((key) => {
-                            const anterior = item.datos_anteriores?.[key];
-                            const nuevo = item.datos_nuevos?.[key];
-                            if (anterior === nuevo) return null;
-                            return (
-                              <div key={key} className="text-xs">
-                                <span className="font-medium">{key}:</span>{' '}
-                                <span className="text-red-600 line-through">{String(anterior)}</span>{' '}
-                                → <span className="text-green-600">{String(nuevo)}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {item.comentario || <span className="text-gray-400">—</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </PageShell>
-  );
+interface PageProps {
+  searchParams: Promise<{ page?: string; accion?: string }>;
 }
 
+export default async function AuditoriaPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const page = params.page ? parseInt(params.page, 10) : 1;
+
+  const accion = params.accion && VALID_ACCIONES.includes(params.accion as AccionAuditoria)
+    ? (params.accion as AccionAuditoria)
+    : undefined;
+
+  const [paged, pendingMurales, pendingMods] = await Promise.all([
+    getAuditoria({ page, accion }),
+    countMuralesPendientes(),
+    countModificacionesPendientes(),
+  ]);
+
+  return (
+    <div className="flex min-h-dvh">
+      <AdminSidebar
+        pendingMuralesCount={pendingMurales}
+        pendingModificacionesCount={pendingMods}
+      />
+      <div className="flex-1 flex flex-col">
+        <SiteHeader />
+        <main id="main" className="flex-1 p-4 md:p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold">Auditoría</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Registro inmutable de las acciones administrativas.
+            </p>
+          </div>
+
+          {paged.data.length === 0 ? (
+            <EmptyState
+              icon={ClipboardList}
+              title="Sin registros"
+              description="Todavía no hay acciones registradas."
+            />
+          ) : (
+            <AuditoriaTable registros={paged.data} />
+          )}
+
+          <AdminPagination
+            page={paged.page}
+            totalPages={paged.totalPages}
+            total={paged.total}
+            baseSearchParams={{ accion: params.accion }}
+            basePath="/admin/auditoria"
+          />
+        </main>
+      </div>
+    </div>
+  );
+}
