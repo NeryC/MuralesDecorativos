@@ -95,6 +95,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // If already authenticated and visiting the login page, go to admin
+  if (user && pathname === '/admin/login') {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
   return response;
 }
 
