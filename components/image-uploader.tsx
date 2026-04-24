@@ -1,123 +1,136 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import ImageModal from '@/components/image-modal';
-import { MESSAGES } from '@/lib/messages';
-import { FILE_LIMITS } from '@/lib/ui-constants';
+import { useRef, useState, useCallback, useEffect } from "react";
+import { ImagePlus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ImageUploaderProps {
   onFileSelect: (file: File | null) => void;
-  onError?: (error: string) => void;
+  onError?: (msg: string) => void;
   disabled?: boolean;
-  resetKey?: number | string;
+  resetKey?: number;
 }
 
-export default function ImageUploader({ onFileSelect, onError, disabled, resetKey }: ImageUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const ACCEPTED = "image/jpeg,image/png,image/webp";
+const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
-  // Reset when resetKey changes
+export default function ImageUploader({
+  onFileSelect,
+  onError,
+  disabled,
+  resetKey,
+}: ImageUploaderProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
   useEffect(() => {
-    if (resetKey !== undefined) {
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
+    setPreview(null);
+    setFileName(null);
+    if (inputRef.current) inputRef.current.value = "";
   }, [resetKey]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      if (onError) {
-        onError(MESSAGES.VALIDATION.ARCHIVO_INVALIDO);
+  const handleFile = useCallback(
+    (file: File | null) => {
+      if (!file) {
+        setPreview(null);
+        setFileName(null);
+        onFileSelect(null);
+        return;
       }
-      return;
-    }
-
-    // Validar tamaño (máximo 10MB)
-    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE_BYTES) {
-      if (onError) {
-        onError(MESSAGES.VALIDATION.ARCHIVO_MUY_GRANDE);
+      if (file.size > MAX_SIZE_BYTES) {
+        onError?.("La imagen supera el tamaño máximo de 10 MB.");
+        return;
       }
-      return;
-    }
+      if (!ACCEPTED.split(",").includes(file.type)) {
+        onError?.("Solo se permiten imágenes JPG, PNG o WebP.");
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      setFileName(file.name);
+      onFileSelect(file);
+    },
+    [onFileSelect, onError],
+  );
 
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Notify parent component about the selected file
-    onFileSelect(file);
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFile(e.target.files?.[0] ?? null);
   };
 
-  const handleRemove = () => {
-    setPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    onFileSelect(null); // Clear the file
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleFile(e.dataTransfer.files?.[0] ?? null);
+  };
+
+  const clear = () => {
+    handleFile(null);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   return (
-    <div>
-      <div
-        className="relative cursor-pointer transition-colors"
-        style={{
-          border: '2px dashed #cbd5e1',
-          borderRadius: '10px',
-          padding: '24px',
-          textAlign: 'center',
-          background: preview ? 'transparent' : '#f8fafc',
-        }}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {preview ? (
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Imagen <span className="text-destructive">*</span>
+      </label>
+
+      {preview ? (
+        <div className="relative rounded-md border overflow-hidden bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
-            alt="Preview"
-            className="mx-auto rounded-lg object-cover"
-            style={{ maxHeight: '160px', maxWidth: '100%' }}
+            alt={fileName ?? "Vista previa"}
+            className="w-full h-auto max-h-72 object-contain"
           />
-        ) : (
-          <>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>📷</div>
-            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
-              Hacer click para seleccionar foto
-            </div>
-            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-              JPG, PNG, WebP · Máx. 10MB
-            </div>
-          </>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-      {preview && !disabled && (
-        <div className="flex justify-end mt-2">
-          <button
+          <Button
             type="button"
-            onClick={handleRemove}
-            className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 flex-shrink-0"
-            aria-label="Eliminar imagen"
+            variant="secondary"
+            size="sm"
+            onClick={clear}
+            disabled={disabled}
+            className="absolute top-2 right-2"
           >
-            ×
-          </button>
+            <X className="size-4" aria-hidden="true" />
+            Cambiar
+          </Button>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          disabled={disabled}
+          className={cn(
+            "flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-8 transition-colors",
+            "text-muted-foreground hover:border-accent hover:text-accent",
+            dragOver && "border-accent text-accent bg-accent/5",
+            disabled && "opacity-50 cursor-not-allowed",
+          )}
+        >
+          <ImagePlus className="size-8" aria-hidden="true" />
+          <span className="text-sm font-medium">
+            Tocá o arrastrá una imagen
+          </span>
+          <span className="text-xs">JPG, PNG o WebP · máx 10 MB</span>
+        </button>
       )}
-      <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED}
+        onChange={onInputChange}
+        disabled={disabled}
+        className="sr-only"
+      />
     </div>
   );
 }
