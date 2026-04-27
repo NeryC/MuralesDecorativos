@@ -2,33 +2,54 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MURAL_ESTADOS } from "@/lib/constants";
 import { apiError, apiSuccess } from "@/lib/api-response";
+import { reporteApiSchema } from "@/lib/schemas/reporte";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+import { captureException } from "@/lib/observability";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 /**
  * POST /api/murales/[id]/report
- * Reporta un mural como eliminado o modificado
- *
- * Reglas:
- * - Un mural puede recibir múltiples solicitudes de modificación mientras
- *   NO esté aún marcado como modificado_aprobado.
- * - Una vez que el mural está en estado MODIFICADO_APROBADO, ya no se aceptan
- *   nuevas solicitudes de modificación.
+ * Reporta un mural como eliminado o modificado.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { tipo, nuevo_comentario, nueva_imagen_url, nueva_imagen_thumbnail_url } = body;
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
 
-    // For modification reports an image is required; for elimination it is not
-    if (tipo !== "eliminacion" && !nueva_imagen_url) {
-      return apiError("La nueva imagen es requerida", 400);
+    const limit = await checkRateLimit({
+      key: `murales:report:${ip}`,
+      limit: 5,
+      windowSeconds: 60,
+    });
+    if (!limit.ok) {
+      return apiError("Demasiadas solicitudes. Intentá de nuevo en un minuto.", 429);
     }
+
+    const raw = await request.json().catch(() => null);
+    const parsed = reporteApiSchema.safeParse(raw);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      return apiError(first?.message ?? "Body inválido", 400);
+    }
+    const body = parsed.data;
+
+    const captcha = await verifyTurnstileToken(body.turnstileToken, ip);
+    if (!captcha.ok) {
+      return apiError(captcha.reason, 400);
+    }
+
+    const nuevaImagenUrl = body.nueva_imagen_url ?? body.imagen_url ?? null;
+    const nuevaImagenThumbUrl =
+      body.nueva_imagen_thumbnail_url ?? body.imagen_thumbnail_url ?? null;
+    const nuevoComentario = body.nuevo_comentario ?? body.motivo ?? null;
 
     const supabase = await createClient();
 
-    // 1) Verificar el estado actual del mural
     const { data: muralActual, error: fetchError } = await supabase
       .from("murales")
       .select("id, estado")
@@ -36,7 +57,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single();
 
     if (fetchError) {
-      console.error("Error fetching mural before report:", fetchError);
+      captureException(fetchError, { route: "POST /api/murales/[id]/report" });
       return apiError("No se pudo obtener el mural para validar el reporte", 500);
     }
 
@@ -44,7 +65,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return apiError("Mural no encontrado", 404);
     }
 
-    // 2) Si ya fue modificado y aprobado, bloquear nuevas solicitudes
     if (muralActual.estado === MURAL_ESTADOS.MODIFICADO_APROBADO) {
       return apiError(
         "El mural ya fue modificado y aprobado. No se pueden crear más solicitudes de modificación.",
@@ -52,10 +72,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // 3a) Para reportes de eliminación: registrar sin imagen y marcar el mural para revisión
-    if (tipo === "eliminacion") {
-      const comentarioEliminacion = nuevo_comentario
-        ? `Reporte de eliminación: ${nuevo_comentario}`
+    if (body.tipo === "eliminacion") {
+      const comentarioEliminacion = nuevoComentario
+        ? `Reporte de eliminación: ${nuevoComentario}`
         : "Reporte de eliminación";
 
       const { data, error } = await supabase
@@ -72,54 +91,44 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .single();
 
       if (error) {
-        console.error("Error reporting mural elimination:", error);
+        captureException(error, { route: "POST /api/murales/[id]/report:eliminacion" });
         return apiError(error.message, 500);
       }
 
-      if (!data) {
-        return apiError("Mural no encontrado", 404);
-      }
-
-      // Mark mural as pending admin review
       const { error: updError } = await supabase
         .from("murales")
         .update({ estado: "modificado_pendiente" })
         .eq("id", muralActual.id);
 
       if (updError) {
-        console.error("[report/eliminacion]", updError);
+        captureException(updError, { route: "POST /api/murales/[id]/report:eliminacion-update" });
         return apiError("Error al registrar el reporte de eliminación", 500);
       }
 
       return apiSuccess({ success: true, data });
     }
 
-    // 3b) Registrar una NUEVA solicitud de modificación (no sobreescribimos campos en la tabla de murales)
     const { data, error } = await supabase
       .from("mural_modificaciones")
       .insert([
         {
           mural_id: muralActual.id,
-          nuevo_comentario: nuevo_comentario || null,
-          nueva_imagen_url,
-          nueva_imagen_thumbnail_url: nueva_imagen_thumbnail_url || null,
+          nuevo_comentario: nuevoComentario,
+          nueva_imagen_url: nuevaImagenUrl,
+          nueva_imagen_thumbnail_url: nuevaImagenThumbUrl,
         },
       ])
       .select()
       .single();
 
     if (error) {
-      console.error("Error reporting mural:", error);
+      captureException(error, { route: "POST /api/murales/[id]/report:modificacion" });
       return apiError(error.message, 500);
-    }
-
-    if (!data) {
-      return apiError("Mural no encontrado", 404);
     }
 
     return apiSuccess({ success: true, data });
   } catch (error) {
-    console.error("Unexpected error:", error);
+    captureException(error, { route: "POST /api/murales/[id]/report" });
     return apiError("Error interno del servidor", 500);
   }
 }

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageUploader from "@/components/image-uploader";
+import { TurnstileWidget } from "@/components/turnstile";
 import { reporteSchema, type ReporteFormValues } from "@/lib/schemas/reporte";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { MESSAGES } from "@/lib/messages";
+import { env } from "@/lib/env";
 
 interface ReporteFormProps {
   muralId: string;
@@ -25,6 +27,9 @@ export function ReporteForm({ muralId, muralName }: ReporteFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileSiteKey = env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const handleCaptcha = useCallback((t: string | null) => setCaptchaToken(t), []);
 
   const form = useForm<ReporteFormValues>({
     resolver: zodResolver(reporteSchema),
@@ -38,12 +43,20 @@ export function ReporteForm({ muralId, muralName }: ReporteFormProps) {
   const tipo = form.watch("tipo");
 
   const onSubmit = async (values: ReporteFormValues) => {
+    if (turnstileSiteKey && !captchaToken) {
+      toast.error("Por favor completá el captcha.");
+      return;
+    }
     setBusy(true);
     try {
       let imagen_url: string | undefined;
       let imagen_thumbnail_url: string | undefined;
 
-      if (values.tipo === "modificacion" && file) {
+      if (values.tipo === "modificacion") {
+        if (!file) {
+          toast.error(MESSAGES.VALIDATION.SELECCIONAR_FOTO_REPORTE);
+          return;
+        }
         const urls = await uploadImage(file);
         if (!urls) return;
         imagen_url = urls.originalUrl;
@@ -53,7 +66,13 @@ export function ReporteForm({ muralId, muralName }: ReporteFormProps) {
       const res = await fetch(`/api/murales/${muralId}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, imagen_url, imagen_thumbnail_url }),
+        body: JSON.stringify({
+          ...values,
+          imagen_url,
+          imagen_thumbnail_url,
+          nuevo_comentario: values.motivo,
+          turnstileToken: captchaToken ?? undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -124,6 +143,12 @@ export function ReporteForm({ muralId, muralName }: ReporteFormProps) {
           disabled={busy || isUploading}
           resetKey={resetKey}
         />
+      )}
+
+      {turnstileSiteKey && (
+        <div className="flex justify-start">
+          <TurnstileWidget siteKey={turnstileSiteKey} onToken={handleCaptcha} />
+        </div>
       )}
 
       <div className="flex justify-end gap-3 pt-4 border-t">

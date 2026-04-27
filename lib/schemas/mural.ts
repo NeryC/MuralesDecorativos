@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { env } from "@/lib/env";
 
 export const muralSchema = z.object({
   nombre: z
@@ -19,3 +20,26 @@ export const muralSchema = z.object({
 });
 
 export type MuralFormValues = z.infer<typeof muralSchema>;
+
+const supabasePublicUrlPattern = (() => {
+  try {
+    const host = new URL(env.NEXT_PUBLIC_SUPABASE_URL).host.replace(/\./g, "\\.");
+    return new RegExp(`^https://${host}/storage/v1/object/public/murales/`);
+  } catch {
+    return /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/murales\//;
+  }
+})();
+
+const supabaseImageUrl = z
+  .string()
+  .url()
+  .max(500)
+  .regex(supabasePublicUrlPattern, "La URL de imagen debe pertenecer al storage de Supabase");
+
+export const muralCreateApiSchema = muralSchema.extend({
+  imagen_url: supabaseImageUrl,
+  imagen_thumbnail_url: supabaseImageUrl.nullish(),
+  turnstileToken: z.string().min(1).max(2048).optional(),
+});
+
+export type MuralCreateApiPayload = z.infer<typeof muralCreateApiSchema>;

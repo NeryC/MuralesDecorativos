@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import ImageUploader from "@/components/image-uploader";
 import { MapField } from "@/components/map-field";
+import { TurnstileWidget } from "@/components/turnstile";
 import { muralSchema, type MuralFormValues } from "@/lib/schemas/mural";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { MESSAGES } from "@/lib/messages";
+import { env } from "@/lib/env";
 
 export function MuralForm() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [isSubmitting, setSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileSiteKey = env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const handleCaptcha = useCallback((t: string | null) => setCaptchaToken(t), []);
 
   const form = useForm<MuralFormValues>({
     resolver: zodResolver(muralSchema),
@@ -36,6 +41,10 @@ export function MuralForm() {
       toast.error(MESSAGES.VALIDATION.SELECCIONAR_FOTO);
       return;
     }
+    if (turnstileSiteKey && !captchaToken) {
+      toast.error("Por favor completá el captcha.");
+      return;
+    }
     setSubmitting(true);
     try {
       const urls = await uploadImage(file);
@@ -48,6 +57,7 @@ export function MuralForm() {
           ...values,
           imagen_url: urls.originalUrl,
           imagen_thumbnail_url: urls.thumbnailUrl,
+          turnstileToken: captchaToken ?? undefined,
         }),
       });
 
@@ -136,6 +146,12 @@ export function MuralForm() {
           resetKey={resetKey}
         />
       </div>
+
+      {turnstileSiteKey && (
+        <div className="flex justify-start">
+          <TurnstileWidget siteKey={turnstileSiteKey} onToken={handleCaptcha} />
+        </div>
+      )}
 
       <div className="sticky bottom-0 sm:static flex justify-end gap-3 pt-4 border-t bg-background">
         <Button type="button" variant="outline" onClick={() => router.push("/")} disabled={busy}>

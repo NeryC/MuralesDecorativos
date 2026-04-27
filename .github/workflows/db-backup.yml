@@ -1,0 +1,67 @@
+name: Backup Supabase DB
+
+on:
+  schedule:
+    # Domingos 04:30 UTC (cada semana)
+    - cron: "30 4 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: backups
+          fetch-depth: 1
+        continue-on-error: true
+
+      - name: Ensure backups branch exists
+        run: |
+          if ! git show-ref --quiet refs/heads/backups; then
+            git checkout --orphan backups
+            git rm -rf . 2>/dev/null || true
+            mkdir -p backups
+            echo "# Database backups (automated)" > README.md
+            git add README.md
+            git -c user.name=github-actions -c user.email=actions@github.com commit -m "init backups branch"
+          fi
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Dump database
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          mkdir -p backups
+          STAMP=$(date -u +%Y%m%d-%H%M%S)
+          OUT="backups/${STAMP}.sql"
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db dump --schema public --schema storage --file "$OUT"
+          gzip "$OUT"
+          ls -lh backups | tail -20
+
+      - name: Prune backups older than 12 weeks
+        run: |
+          find backups -name '*.sql.gz' -type f -mtime +84 -print -delete || true
+
+      - name: Commit & push
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          if git status --porcelain | grep -q .; then
+            git add backups
+            git commit -m "backup: $(date -u +%Y-%m-%d)"
+            git push origin backups
+          else
+            echo "No changes to commit"
+          fi

@@ -32,6 +32,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # legacy JWT (eyJ...), not sb_publishable_*
 
 `lib/env.ts` validates both with zod at module load time and throws loudly if missing/invalid.
 
+Variables opcionales (recomendadas en producción):
+
+```
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # Cloudflare Turnstile site key
+TURNSTILE_SECRET_KEY=             # Cloudflare Turnstile secret (server-only)
+SENTRY_DSN=                       # Observabilidad (ver lib/observability.ts)
+```
+
+Cuando `TURNSTILE_SECRET_KEY` no está definida, `verifyTurnstileToken` es no-op (útil en desarrollo). Ver `docs/OPERATIONS.md` para el checklist de producción.
+
 ## Architecture
 
 **Stack:** Next.js 16 (App Router) + React 19 + TypeScript + Supabase (PostgreSQL + Storage + Auth) + Tailwind CSS v4 + Leaflet.js + shadcn/ui + lucide-react + react-hook-form + zod.
@@ -117,7 +127,9 @@ Three tables (see `supabase/migrations/20250101000000_init.sql`):
 
 **`auditoria`** — append-only, never deleted. `accion`: `aprobar_mural | rechazar_mural | aprobar_modificacion | rechazar_modificacion | actualizar_estado`. `entidad_tipo`: `mural | modificacion`. `datos_anteriores` and `datos_nuevos` are `jsonb` snapshots. Always called via `registrarAuditoria()` in `lib/auditoria.ts`.
 
-RLS enabled on all three. Public: SELECT all murales + INSERT pendientes + SELECT/INSERT modificaciones. Authenticated only: UPDATE/DELETE on murales and mural_modificaciones, full access to `auditoria`. Storage bucket `murales` is public read + public insert (the insert ratelimited in `proxy.ts`).
+RLS enabled on all three. Public: SELECT all murales + INSERT pendientes + SELECT/INSERT modificaciones. Authenticated only: UPDATE/DELETE on murales and mural_modificaciones, full access to `auditoria`. Storage bucket `murales` is public read + public insert (`file_size_limit = 5 MB`, MIME types restringidos a JPG/PNG/WebP, rate-limit en proxy + en cada API route vía `lib/rate-limit.ts`).
+
+**`rate_limits`** — tabla auxiliar (migración `20260426000000_*`) con RPC `rate_limit_hit(p_key, p_limit, p_window_seconds)` para rate limiting atómico compartido entre instancias. Llamada desde `lib/rate-limit.ts`. Limpieza opcional: `select rate_limits_purge();`.
 
 ### Key library modules
 
@@ -133,7 +145,10 @@ RLS enabled on all three. Public: SELECT all murales + INSERT pendientes + SELEC
 - `lib/types.ts` — `Mural`, `MuralModificacion`, `Auditoria`, `EstadoMural`, `AccionAuditoria`, DTOs
 - `lib/constants.ts` — `DEFAULT_COORDINATES` (Asunción), `IMAGE_COMPRESSION`, `MURAL_ESTADOS`
 - `lib/messages.ts` — `MESSAGES.SUCCESS`, `.ERROR`, `.VALIDATION`, `.LOADING`, `.UI`
-- `lib/schemas/` — `muralSchema` (zod), `reporteSchema` (zod)
+- `lib/schemas/` — `muralSchema` (form), `muralCreateApiSchema` (server), `reporteSchema` (form), `reporteApiSchema` (server). Los `*ApiSchema` validan también las URLs de Storage y el `turnstileToken`.
+- `lib/turnstile.ts` — `verifyTurnstileToken()` server-side, no-op cuando `TURNSTILE_SECRET_KEY` no está definida.
+- `lib/rate-limit.ts` — `checkRateLimit()` persistente vía RPC `rate_limit_hit` (Postgres). Fallback in-memory si la RPC falla.
+- `lib/observability.ts` — `captureException`, `captureMessage`. Reporter por defecto `console`; `instrumentation.ts` lo reemplaza por Sentry cuando `SENTRY_DSN` está definida (`@sentry/nextjs` ya instalado, `next.config.ts` envuelto con `withSentryConfig`).
 
 ### Hooks
 
