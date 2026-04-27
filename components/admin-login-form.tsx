@@ -24,11 +24,34 @@ export function AdminLoginForm() {
   const rawNext = searchParams.get("next") ?? "";
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/admin";
   const [busy, setBusy] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
+
+  const onForgotPassword = async () => {
+    const email = form.getValues("email").trim();
+    if (!email || !z.string().email().safeParse(email).success) {
+      toast.error("Ingresá tu email arriba antes de pedir el reset.");
+      form.setFocus("email");
+      return;
+    }
+    setResetting(true);
+    try {
+      const supabase = createClient();
+      const redirectTo = `${window.location.origin}/auth/callback?next=/admin/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        toast.error(error.message ?? "No se pudo enviar el correo de reset.");
+        return;
+      }
+      toast.success("Te enviamos un correo con el enlace para definir nueva contraseña.");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const onSubmit = async (values: Values) => {
     setBusy(true);
@@ -77,6 +100,15 @@ export function AdminLoginForm() {
         <LogIn className="size-4" aria-hidden="true" />
         {busy ? "Ingresando..." : "Ingresar"}
       </Button>
+
+      <button
+        type="button"
+        onClick={onForgotPassword}
+        disabled={resetting || busy}
+        className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline self-center"
+      >
+        {resetting ? "Enviando..." : "¿Olvidaste tu contraseña?"}
+      </button>
     </form>
   );
 }
