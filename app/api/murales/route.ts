@@ -7,6 +7,7 @@ import { muralCreateApiSchema } from "@/lib/schemas/mural";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { captureException } from "@/lib/observability";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { notifyNewMuralPending } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -117,6 +118,14 @@ export async function POST(request: NextRequest) {
       captureException(error, { route: "POST /api/murales" });
       return apiError(error.message, 500);
     }
+
+    void notifyNewMuralPending({
+      nombre: body.nombre,
+      candidato: body.candidato,
+      comentario: body.comentario,
+      url_maps: body.url_maps,
+      imagen_url: body.imagen_url,
+    });
 
     return apiSuccess({ success: true }, 201);
   } catch (error) {
