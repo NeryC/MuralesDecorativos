@@ -5,6 +5,7 @@ import { EstadoBadge } from "@/components/estado-badge";
 import { EmptyState } from "@/components/empty-state";
 import { AdminPagination } from "@/components/admin/pagination";
 import { MuralRowActions } from "@/components/admin/mural-row-actions";
+import { ClickableThumbnail } from "@/components/admin/clickable-thumbnail";
 import { getAllMurales } from "@/lib/queries/admin-murales";
 
 type AdminEstado = "pendiente" | "aprobado" | "rechazado" | "modificado_pendiente" | "todos";
@@ -49,6 +50,7 @@ export async function MuralesTableSection({
         <table className="w-full text-sm">
           <thead className="bg-muted text-muted-foreground sticky top-0">
             <tr>
+              <th className="px-4 py-3 text-left font-medium">Foto</th>
               <th className="px-4 py-3 text-left font-medium">Nombre</th>
               <th className="px-4 py-3 text-left font-medium">Candidato</th>
               <th className="px-4 py-3 text-left font-medium">Ubicación</th>
@@ -60,6 +62,14 @@ export async function MuralesTableSection({
           <tbody className="divide-y">
             {pagedMurales.data.map((m) => (
               <tr key={m.id} className="hover:bg-muted/30">
+                <td className="px-4 py-3">
+                  <ClickableThumbnail
+                    thumbnailUrl={m.imagen_thumbnail_url}
+                    fullUrl={m.imagen_url}
+                    alt={m.nombre}
+                    className="h-12 w-12 rounded-md border shrink-0"
+                  />
+                </td>
                 <td className="px-4 py-3 font-medium">{m.nombre}</td>
                 <td className="px-4 py-3 text-muted-foreground">{m.candidato ?? "—"}</td>
                 <td className="px-4 py-3">
