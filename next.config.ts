@@ -19,7 +19,7 @@ const csp = [
   `object-src 'none'`,
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://va.vercel-scripts.com`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: https://${supabaseHost} https://*.tile.openstreetmap.org https://unpkg.com`,
+  `img-src 'self' data: blob: https://${supabaseHost} https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com`,
   `font-src 'self' data:`,
   `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://challenges.cloudflare.com https://vitals.vercel-insights.com`,
   `frame-src https://challenges.cloudflare.com`,
