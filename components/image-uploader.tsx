@@ -13,7 +13,8 @@ interface ImageUploaderProps {
 }
 
 const ACCEPTED = "image/jpeg,image/png,image/webp";
-const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SIZE_LABEL = "5 MB";
 
 export default function ImageUploader({
   onFileSelect,
@@ -51,7 +52,7 @@ export default function ImageUploader({
         return;
       }
       if (file.size > MAX_SIZE_BYTES) {
-        onError?.("La imagen supera el tamaño máximo de 10 MB.");
+        onError?.(`La imagen supera el tamaño máximo de ${MAX_SIZE_LABEL}.`);
         return;
       }
       if (!ACCEPTED.split(",").includes(file.type)) {
@@ -130,7 +131,7 @@ export default function ImageUploader({
         >
           <ImagePlus className="size-8" aria-hidden="true" />
           <span className="text-sm font-medium">Tocá o arrastrá una imagen</span>
-          <span className="text-xs">JPG, PNG o WebP · máx 10 MB</span>
+          <span className="text-xs">JPG, PNG o WebP · máx {MAX_SIZE_LABEL}</span>
         </button>
       )}
 

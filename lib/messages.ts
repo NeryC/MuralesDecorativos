@@ -31,7 +31,7 @@ export const MESSAGES = {
     SELECCIONAR_FOTO: "Debes seleccionar una foto del mural.",
     SELECCIONAR_FOTO_REPORTE: "Por favor selecciona una foto.",
     ARCHIVO_INVALIDO: "Por favor selecciona un archivo de imagen válido",
-    ARCHIVO_MUY_GRANDE: "La imagen es demasiado grande. Máximo 10MB",
+    ARCHIVO_MUY_GRANDE: "La imagen es demasiado grande. Máximo 5 MB",
   },
 
   // Estados de carga

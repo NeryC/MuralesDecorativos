@@ -455,15 +455,17 @@ Alias `@/*` → raíz del repo (ver `tsconfig.json`).
 | --- | --- |
 | Auth de admin | `requireAuth` / `requireAdminClient` verifican sesión Supabase en cada Server Action y Route Handler sensible |
 | Proxy guard | `proxy.ts` redirige `/admin/*` (excepto `/admin/login`) a login cuando no hay sesión, y de `/admin/login` a `/admin` si ya hay |
-| Rate limiting | 10 req/min por IP en `/api/murales` y `/api/upload` (Map en memoria; aceptable para un Vercel instance) |
+| Rate limiting | In-memory (proxy) + persistente vía RPC `rate_limit_hit` en Postgres (atómico, compartido entre instancias) en `/api/murales`, `/api/upload` y `/api/murales/[id]/report` |
 | Validación de inputs | zod schemas en API routes y forms (`muralSchema`, `reporteSchema`, `updateSchema`) |
-| Upload de imágenes | MIME type + extensión validadas en `/api/upload`; tamaño máximo 10 MB; sólo `image/jpeg`, `image/png`, `image/webp` |
+| Upload de imágenes | MIME type + extensión validadas en `/api/upload`; tamaño máximo 5 MB (server + bucket); sólo `image/jpeg`, `image/png`, `image/webp` |
 | XSS | `escapeHtml()` aplicado a todas las interpolaciones en HTML crudo (popups de Leaflet) |
 | Filter injection (PostgREST) | caracteres especiales (`,()*"\`) removidos del search `q` antes de `.or()` |
 | Open redirect | `?next=` del login sólo acepta paths que empiecen con `/` y no con `//` |
 | Sesión | SameSite cookies via `@supabase/ssr`; `getUser()` (no `getSession()`) para decisiones de auth |
-| CSP | Pendiente (roadmap) |
+| CSP | Activa en `next.config.ts` con allowlist para Supabase, OpenStreetMap, Cloudflare Turnstile y Vercel Analytics. También HSTS, X-Frame-Options, Referrer-Policy y Permissions-Policy |
 | Auditoría | Cada acción admin deja registro inmutable con IP + user-agent |
+| Anti-spam | Cloudflare Turnstile en formularios públicos (`/nuevo`, `/reportar`); verificación server-side en `lib/turnstile.ts`. No-op si las env vars no están definidas |
+| Observabilidad | Sentry vía `@sentry/nextjs` con `instrumentation.ts`/`instrumentation-client.ts`. Wrapper `lib/observability.ts` activo en todas las API routes |
 
 ---
 
